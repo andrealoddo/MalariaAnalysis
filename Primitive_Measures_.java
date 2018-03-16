@@ -19,6 +19,13 @@ public class Primitive_Measures_ implements PlugInFilter {
     boolean doMidpoint;
     boolean doFeret_and_breadth; //feret and breadth
     boolean doAspRatio;
+    boolean doCirc;
+    boolean doRoundness;
+    boolean doArEquivD;
+    boolean doPerEquivD;
+    boolean doEquivEllAr;
+    boolean doCompactness;
+    boolean doShape;
 
 
     public int setup(String arg, ImagePlus imp) {
@@ -33,6 +40,14 @@ public class Primitive_Measures_ implements PlugInFilter {
         gd.addCheckbox("Midpoint",false);
         gd.addCheckbox("Feret and breadth of element",false);
         gd.addCheckbox("AspRatio",false);
+        gd.addCheckbox("Circ", false);
+        gd.addCheckbox("Roundness", false);
+        gd.addCheckbox("ArEquivD", false);
+        gd.addCheckbox("PerEquivD", false);
+        gd.addCheckbox("EquivEllAr", false);
+        gd.addCheckbox("Compactness", false);
+        gd.addCheckbox("Shape", false);
+
 
         gd.showDialog();
 
@@ -44,6 +59,12 @@ public class Primitive_Measures_ implements PlugInFilter {
         doMidpoint = gd.getNextBoolean ();
         doFeret_and_breadth = gd.getNextBoolean ();
         doAspRatio=gd.getNextBoolean();
+        doCirc=gd.getNextBoolean();
+        doRoundness=gd.getNextBoolean();
+        doArEquivD=gd.getNextBoolean();
+        doPerEquivD=gd.getNextBoolean();
+        doEquivEllAr=gd.getNextBoolean();
+        doCompactness=gd.getNextBoolean();
 
 
         return DOES_ALL;
@@ -84,6 +105,45 @@ public class Primitive_Measures_ implements PlugInFilter {
         if(doAspRatio){
             double aspRatio = aspRatio(feret_and_breadth(ip, xe, ye));
             rt.addValue("AspRatio", aspRatio);
+        }
+
+        if(doCirc){
+            double circ = circ((area(ip, xe, ye)), perimeter(ip, xe, ye));
+            rt.addValue("Circ", circ);
+
+        }
+
+        if(doRoundness){
+            int [] feret_and_breadth = feret_and_breadth(ip, xe, ye);
+            double roundness = roundness(area(ip, xe, ye), (feret_and_breadth[1]));
+            rt.addValue("Roundness", roundness);
+
+        }
+
+        if(doArEquivD){
+            double arEquivD= arEquivD(area(ip, xe, ye));
+            rt.addValue("ArEquivD", arEquivD);
+        }
+
+        if(doPerEquivD){
+            double perEquivD = perEquivD(area(ip, xe, ye));
+            rt.addValue("PerEquivD", perEquivD);
+        }
+
+        if(doEquivEllAr){
+            double equivEllAr = equivEllAr(feret_and_breadth(ip, xe, ye));
+            rt.addValue("EquivEllAr", equivEllAr);
+        }
+
+        if(doCompactness){
+            int [] feret_and_breadth = feret_and_breadth(ip, xe, ye);
+            double compactness = compactness(area(ip, xe, ye), (feret_and_breadth[1]));
+            rt.addValue("Compactness", compactness);
+        }
+
+        if(doShape){
+            double shape = shape (area(ip, xe, ye), perimeter(ip, xe, ye));
+            rt.addValue("Shape", shape);
         }
 
 
@@ -274,5 +334,41 @@ public class Primitive_Measures_ implements PlugInFilter {
 
     boolean itIsFeret (int feret, int breadth){
         return feret>=breadth;
+    }
+
+    double roundness (int area, int feret){
+        double pigreco= 3.1415926535;
+
+        return (4 * (double)area )/ pigreco * ((double) feret * feret);
+
+    }
+
+    double circ (int area, double perim){
+        double pigreco= 3.1415926535;
+        return (4*(double)area)/(perim*perim);
+    }
+
+    double arEquivD(int area){
+        double pigreco= 3.1415926535;
+        return Math.sqrt((4*pigreco)*(double)area);
+
+    }
+
+    double perEquivD(int area){
+        double pigreco= 3.1415926535;
+        return (double)area/pigreco;
+    }
+
+    double compactness(int area, int feret){
+        return arEquivD(area)/(double) feret;
+    }
+
+    double equivEllAr(int [] feret_and_breadth){
+        double pigreco= 3.1415926535;
+        return (pigreco*(double)feret_and_breadth[1]*(double)feret_and_breadth[0])/4;
+    }
+
+    double shape (int area, double perimeter){
+        return (perimeter*perimeter)/(double) area;
     }
 }
