@@ -9,7 +9,6 @@ import ij.plugin.MeasurementsWriter;
 import java.util.*;
 import javax.swing.JOptionPane;
 
-
 public class Primitive_Measures_ implements PlugInFilter {
     ImagePlus imp;
     static String title = "prova";
@@ -18,7 +17,8 @@ public class Primitive_Measures_ implements PlugInFilter {
     boolean doArea;
     boolean doPerimeter;
     boolean doMidpoint;
-    boolean doHeight_and_width;
+    boolean doFeret_and_breadth; //feret and breadth
+    boolean doAspRatio;
 
 
     public int setup(String arg, ImagePlus imp) {
@@ -31,7 +31,8 @@ public class Primitive_Measures_ implements PlugInFilter {
         gd.addCheckbox("Area",true);
         gd.addCheckbox("Perimeter",false);
         gd.addCheckbox("Midpoint",false);
-        gd.addCheckbox("Height and width of element",false);
+        gd.addCheckbox("Feret and breadth of element",false);
+        gd.addCheckbox("AspRatio",false);
 
         gd.showDialog();
 
@@ -41,7 +42,8 @@ public class Primitive_Measures_ implements PlugInFilter {
         doArea = gd.getNextBoolean ();
         doPerimeter = gd.getNextBoolean ();
         doMidpoint = gd.getNextBoolean ();
-        doHeight_and_width = gd.getNextBoolean ();
+        doFeret_and_breadth = gd.getNextBoolean ();
+        doAspRatio=gd.getNextBoolean();
 
 
         return DOES_ALL;
@@ -49,8 +51,6 @@ public class Primitive_Measures_ implements PlugInFilter {
     }
 
     public void run(ImageProcessor ip) {
-
-
 
         rt.reset();
 
@@ -75,10 +75,15 @@ public class Primitive_Measures_ implements PlugInFilter {
             rt.addValue("Midpoint Y", midpoint[1]);
         }
 
-        if(doHeight_and_width){
-            int [] height_and_width = height_and_width(ip, xe, ye);
-            rt.addValue("Width of Element", height_and_width[0]);
-            rt.addValue("Height of Element", height_and_width[1]);
+        if(doFeret_and_breadth){
+            int [] feret_and_breadth = feret_and_breadth(ip, xe, ye);
+            rt.addValue("Width/Breadth of Element", feret_and_breadth[0]);
+            rt.addValue("Height/Feret of Element", feret_and_breadth[1]); //sempre alla posizione 1 feret
+        }
+
+        if(doAspRatio){
+            double aspRatio = aspRatio(feret_and_breadth(ip, xe, ye));
+            rt.addValue("AspRatio", aspRatio);
         }
 
 
@@ -205,7 +210,7 @@ public class Primitive_Measures_ implements PlugInFilter {
         return midpoint;
     }
 
-    public int [] height_and_width (ImageProcessor ip_for_height_and_width, int xe, int ye){
+    public int [] feret_and_breadth (ImageProcessor ip_for_feret_and_breadth, int xe, int ye){
        int [] supportUp = {0,0}; //per coordinate superiori massime dell'elemento
        int [] supportDown = {0,0}; //per coordinate minime dell'elemento
 
@@ -214,20 +219,20 @@ public class Primitive_Measures_ implements PlugInFilter {
 
         for(int x=0; x<xe; x++ ){
             for(int y=0; y<ye; y++) {
-                if (ip_for_height_and_width.getPixel(x, y) == 255) {
+                if (ip_for_feret_and_breadth.getPixel(x, y) == 255) {
                     //perimetro; solo i bordi interni verranno controllati e conteggiati
-                    if (ip_for_height_and_width.getPixel(x - 1, y) == 0) {
+                    if (ip_for_feret_and_breadth.getPixel(x - 1, y) == 0) {
                         supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
                         supportUp=updateSupportUp(x, y, supportUp ); //solo nei bordi interni per evitare caos
 
-                    } else if (ip_for_height_and_width.getPixel(x + 1, y) == 0) {
+                    } else if (ip_for_feret_and_breadth.getPixel(x + 1, y) == 0) {
                         supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
                         supportUp=updateSupportUp(x, y, supportUp );
 
-                    } else if (ip_for_height_and_width.getPixel(x, y - 1) == 0) {
+                    } else if (ip_for_feret_and_breadth.getPixel(x, y - 1) == 0) {
                         supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
                         supportUp=updateSupportUp(x, y, supportUp );
-                    } else if (ip_for_height_and_width.getPixel(x, y + 1) == 0) {
+                    } else if (ip_for_feret_and_breadth.getPixel(x, y + 1) == 0) {
                         supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
                         supportUp=updateSupportUp(x, y, supportUp );
                     }
@@ -238,9 +243,14 @@ public class Primitive_Measures_ implements PlugInFilter {
 
         int heightElement= (supportUp[1]-supportDown[1])+1 ; //calcolo altezza e larghezza dell'elemento: il +1 è necessario perchè il primo pixel viene settato a 0 (0,0)
         int widthElement = (supportUp[0]-supportDown[0])+1;
-        int [] height_and_width = {widthElement, heightElement};
 
-        return height_and_width; //0 larghezza 1 altezza
+        if(itIsFeret(heightElement, widthElement)){
+            int [] feret_and_breadth = {widthElement, heightElement };
+            return feret_and_breadth; //0 larghezza 1 altezza
+        }else{
+            int [] feret_and_breadth = {heightElement, widthElement};
+            return feret_and_breadth; //0 larghezza 1 altezza
+        }
 
     }
 
@@ -256,5 +266,13 @@ public class Primitive_Measures_ implements PlugInFilter {
         if(supportUp[0]<x){supportUp[0]=x;}
 
         return supportUp;
+    }
+
+    double aspRatio (int [] feret_and_breadth){
+        return feret_and_breadth[1]/feret_and_breadth[0];
+    }
+
+    boolean itIsFeret (int feret, int breadth){
+        return feret>=breadth;
     }
 }
