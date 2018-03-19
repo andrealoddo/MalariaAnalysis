@@ -17,7 +17,9 @@ public class Primitive_Measures_ implements PlugInFilter {
     boolean doArea;
     boolean doPerimeter;
     boolean doMidpoint;
-    boolean doFeret_and_breadth; //feret and breadth
+    boolean doFeret;
+    boolean doBreadth;
+
     boolean doAspRatio;
     boolean doCirc;
     boolean doRoundness;
@@ -27,6 +29,12 @@ public class Primitive_Measures_ implements PlugInFilter {
     boolean doCompactness;
     boolean doShape;
 
+    boolean doIS;
+
+
+    int [] feret_exstreme_points = {0,0,0,0};
+    int [] breadth_exstreme_points = {0,0,0,0};
+
 
     public int setup(String arg, ImagePlus imp) {
         this.imp = imp;
@@ -35,10 +43,15 @@ public class Primitive_Measures_ implements PlugInFilter {
         gd.addStringField("Title: ", title);
         gd.addMessage("Choise measures");
 
+        gd.addCheckbox("SelectAll",false);
+
         gd.addCheckbox("Area",true);
         gd.addCheckbox("Perimeter",false);
         gd.addCheckbox("Midpoint",false);
-        gd.addCheckbox("Feret and breadth of element",false);
+
+        gd.addCheckbox("Feret",true);
+        gd.addCheckbox("Breadth",true);
+
         gd.addCheckbox("AspRatio",false);
         gd.addCheckbox("Circ", false);
         gd.addCheckbox("Roundness", false);
@@ -48,37 +61,68 @@ public class Primitive_Measures_ implements PlugInFilter {
         gd.addCheckbox("Compactness", false);
         gd.addCheckbox("Shape", false);
 
+        gd.addCheckbox("IS", false);
+
+        //gd.addCheckbox("Show me feret and breadth points.\n Please check Feret and breadth", false);
+
 
         gd.showDialog();
 
         if (gd.wasCanceled())
             return DONE;
 
-        doArea = gd.getNextBoolean ();
-        doPerimeter = gd.getNextBoolean ();
-        doMidpoint = gd.getNextBoolean ();
-        doFeret_and_breadth = gd.getNextBoolean ();
-        doAspRatio=gd.getNextBoolean();
-        doCirc=gd.getNextBoolean();
-        doRoundness=gd.getNextBoolean();
-        doArEquivD=gd.getNextBoolean();
-        doPerEquivD=gd.getNextBoolean();
-        doEquivEllAr=gd.getNextBoolean();
-        doCompactness=gd.getNextBoolean();
+        boolean doSelectAll=gd.getNextBoolean ();
 
+        if(doSelectAll){
+            doArea = true;
+            doPerimeter = true;
+            doMidpoint = true;
+            doFeret= true;
+            doBreadth= true;
+            doAspRatio = true;
+            doCirc = true;
+            doRoundness = true;
+            doArEquivD = true;
+            doPerEquivD = true;
+            doEquivEllAr = true ;
+            doCompactness = true;
+            doIS = true;
+        }else{
+            doArea = gd.getNextBoolean ();
+            doPerimeter = gd.getNextBoolean ();
+            doMidpoint = gd.getNextBoolean ();
+
+            doFeret= gd.getNextBoolean ();
+            doBreadth= gd.getNextBoolean ();
+
+            doAspRatio=gd.getNextBoolean();
+            doCirc=gd.getNextBoolean();
+            doRoundness=gd.getNextBoolean();
+            doArEquivD=gd.getNextBoolean();
+            doPerEquivD=gd.getNextBoolean();
+            doEquivEllAr=gd.getNextBoolean();
+            doCompactness=gd.getNextBoolean();
+
+            doIS=gd.getNextBoolean();
+
+        }
 
         return DOES_ALL;
 
     }
 
     public void run(ImageProcessor ip) {
-
         rt.reset();
+
+        rt.incrementCounter();
 
         int xe = ip.getWidth(); //larghezza e altezza dell'intera immagine
         int ye = ip.getHeight();
 
-        rt.incrementCounter();
+        feret_exstreme_points[3]=ye;
+        breadth_exstreme_points[2]=xe;
+
+        int [] feret_and_breadth = {breadth(ip, xe, ye), feret(ip, xe, ye)};
 
         if(doArea){
             int area = area(ip, xe, ye);
@@ -90,20 +134,25 @@ public class Primitive_Measures_ implements PlugInFilter {
             rt.addValue("Perimeter of element", perimeter);
         }
 
-        if(doMidpoint){
+        if(doMidpoint){//center
             double [] midpoint = midpoint(ip, xe, ye);
             rt.addValue("Midpoint X", midpoint[0]);
             rt.addValue("Midpoint Y", midpoint[1]);
         }
 
-        if(doFeret_and_breadth){
-            int [] feret_and_breadth = feret_and_breadth(ip, xe, ye);
+        if(doFeret){
+            rt.addValue("Height/Feret of Element", feret_and_breadth[1]);
+
+
+        }
+
+        if(doBreadth){
             rt.addValue("Width/Breadth of Element", feret_and_breadth[0]);
-            rt.addValue("Height/Feret of Element", feret_and_breadth[1]); //sempre alla posizione 1 feret
+
         }
 
         if(doAspRatio){
-            double aspRatio = aspRatio(feret_and_breadth(ip, xe, ye));
+            double aspRatio = aspRatio(feret_and_breadth);
             rt.addValue("AspRatio", aspRatio);
         }
 
@@ -114,8 +163,7 @@ public class Primitive_Measures_ implements PlugInFilter {
         }
 
         if(doRoundness){
-            int [] feret_and_breadth = feret_and_breadth(ip, xe, ye);
-            double roundness = roundness(area(ip, xe, ye), (feret_and_breadth[1]));
+            double roundness = roundness(area(ip, xe, ye), feret_and_breadth[1]);
             rt.addValue("Roundness", roundness);
 
         }
@@ -131,12 +179,11 @@ public class Primitive_Measures_ implements PlugInFilter {
         }
 
         if(doEquivEllAr){
-            double equivEllAr = equivEllAr(feret_and_breadth(ip, xe, ye));
+            double equivEllAr = equivEllAr(feret_and_breadth);
             rt.addValue("EquivEllAr", equivEllAr);
         }
 
         if(doCompactness){
-            int [] feret_and_breadth = feret_and_breadth(ip, xe, ye);
             double compactness = compactness(area(ip, xe, ye), (feret_and_breadth[1]));
             rt.addValue("Compactness", compactness);
         }
@@ -146,6 +193,20 @@ public class Primitive_Measures_ implements PlugInFilter {
             rt.addValue("Shape", shape);
         }
 
+
+        if(doIS){
+            double [] cS = iS (feret_exstreme_points, breadth_exstreme_points);
+            rt.addValue("IS-CSx", cS[0]);
+            rt.addValue("IS-CSy", cS[1]);
+        }
+
+        for(int i =0; i < 4; i++){
+            rt.addValue("feret"+i, feret_exstreme_points[i]);
+        }
+
+        for(int i =0; i < 4; i++){
+            rt.addValue("breadth"+i, breadth_exstreme_points[i]);
+        }
 
         rt.addResults();
         rt.updateResults();
@@ -270,62 +331,94 @@ public class Primitive_Measures_ implements PlugInFilter {
         return midpoint;
     }
 
-    public int [] feret_and_breadth (ImageProcessor ip_for_feret_and_breadth, int xe, int ye){
-       int [] supportUp = {0,0}; //per coordinate superiori massime dell'elemento
-       int [] supportDown = {0,0}; //per coordinate minime dell'elemento
-
-       supportDown[1]=ye; supportDown[0]=xe;
-
+    public int feret (ImageProcessor ip_for_feret, int xe, int ye){
 
         for(int x=0; x<xe; x++ ){
             for(int y=0; y<ye; y++) {
-                if (ip_for_feret_and_breadth.getPixel(x, y) == 255) {
-                    //perimetro; solo i bordi interni verranno controllati e conteggiati
-                    if (ip_for_feret_and_breadth.getPixel(x - 1, y) == 0) {
-                        supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
-                        supportUp=updateSupportUp(x, y, supportUp ); //solo nei bordi interni per evitare caos
-
-                    } else if (ip_for_feret_and_breadth.getPixel(x + 1, y) == 0) {
-                        supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
-                        supportUp=updateSupportUp(x, y, supportUp );
-
-                    } else if (ip_for_feret_and_breadth.getPixel(x, y - 1) == 0) {
-                        supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
-                        supportUp=updateSupportUp(x, y, supportUp );
-                    } else if (ip_for_feret_and_breadth.getPixel(x, y + 1) == 0) {
-                        supportDown=updateSupportDown(x, y, supportDown); //richiamo funzione di aggiornamento coordinate per calcolo dell'altezza e della larghezza dell'elemento
-                        supportUp=updateSupportUp(x, y, supportUp );
+                if (ip_for_feret.getPixel(x, y) == 255) {
+                    if (ip_for_feret.getPixel(x - 1, y) == 0) {
+                        feret_exstreme_points=feret_exstreme_points(x,y, feret_exstreme_points);
+                    } else if (ip_for_feret.getPixel(x + 1, y) == 0) {
+                        feret_exstreme_points=feret_exstreme_points(x,y, feret_exstreme_points);
+                    } else if (ip_for_feret.getPixel(x, y - 1) == 0) {
+                        feret_exstreme_points=feret_exstreme_points(x,y, feret_exstreme_points);
+                    } else if (ip_for_feret.getPixel(x, y + 1) == 0) {
+                        feret_exstreme_points=feret_exstreme_points(x,y, feret_exstreme_points);
                     }
 
                 }
             }
         }
 
-        int heightElement= (supportUp[1]-supportDown[1])+1 ; //calcolo altezza e larghezza dell'elemento: il +1 è necessario perchè il primo pixel viene settato a 0 (0,0)
-        int widthElement = (supportUp[0]-supportDown[0])+1;
-
-        if(itIsFeret(heightElement, widthElement)){
-            int [] feret_and_breadth = {widthElement, heightElement };
-            return feret_and_breadth; //0 larghezza 1 altezza
+        if(itIsFeret(((feret_exstreme_points[1]-feret_exstreme_points[3])+1), ((breadth_exstreme_points[0]-breadth_exstreme_points[2])+1)))
+        {
+            return ((feret_exstreme_points[1]-feret_exstreme_points[3])+1);
         }else{
-            int [] feret_and_breadth = {heightElement, widthElement};
-            return feret_and_breadth; //0 larghezza 1 altezza
+            int [] tt = feret_exstreme_points;
+            feret_exstreme_points=breadth_exstreme_points;
+            breadth_exstreme_points=tt;
+            return (feret_exstreme_points[1]-feret_exstreme_points[3])+1; //ricalcola
         }
 
+
     }
 
-    int[] updateSupportDown(int x, int y, int [] supportDown){
-        if(supportDown[1]>y){supportDown[1]=y; }
-        if(supportDown[0]>x){supportDown[0]=x; }
+    public int breadth (ImageProcessor ip_for_breadth, int xe, int ye) {
+        
+            for (int x = 0; x < xe; x++) {
+                for (int y = 0; y < ye; y++) {
+                    if (ip_for_breadth.getPixel(x, y) == 255) {
+                        if (ip_for_breadth.getPixel(x - 1, y) == 0) {
+                            breadth_exstreme_points = breadth_exstreme_points(x, y, breadth_exstreme_points);
+                        } else if (ip_for_breadth.getPixel(x + 1, y) == 0) {
+                            breadth_exstreme_points = breadth_exstreme_points(x, y, breadth_exstreme_points);
+                        } else if (ip_for_breadth.getPixel(x, y - 1) == 0) {
+                            breadth_exstreme_points = breadth_exstreme_points(x, y, breadth_exstreme_points);
+                        } else if (ip_for_breadth.getPixel(x, y + 1) == 0) {
+                            breadth_exstreme_points = breadth_exstreme_points(x, y, breadth_exstreme_points);
+                        }
 
-        return supportDown;
+                    }
+                }
+            }
+            
+
+            if (itIsFeret(((feret_exstreme_points[1] - feret_exstreme_points[3]) + 1), ((breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1))) {
+                int[] tt = feret_exstreme_points;
+                feret_exstreme_points = breadth_exstreme_points;
+                breadth_exstreme_points = tt;
+                return (breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1;//ricalcola
+            } else {
+                return (breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1;
+            }
+
     }
 
-    int[] updateSupportUp(int x, int y, int [] supportUp){
-        if(supportUp[1]<y){supportUp[1]=y;}
-        if(supportUp[0]<x){supportUp[0]=x;}
 
-        return supportUp;
+    int[] feret_exstreme_points(int x, int y, int [] feret_exstreme_points){
+        if(feret_exstreme_points[1]<y){
+            feret_exstreme_points[1]=y;
+            feret_exstreme_points[0]=x;
+        }
+
+        if(feret_exstreme_points[3]>y){
+            feret_exstreme_points[3]=y;
+            feret_exstreme_points[2]=x;
+        }
+
+        return feret_exstreme_points;
+    }
+
+    int[] breadth_exstreme_points(int x, int y, int [] breadth_exstreme_points){
+        if(breadth_exstreme_points[0]<x){
+            breadth_exstreme_points[1]=y;
+            breadth_exstreme_points[0]=x;
+        }
+        if(breadth_exstreme_points[2]>x){
+            breadth_exstreme_points[3]=y;
+            breadth_exstreme_points[2]=x;
+        }
+        return breadth_exstreme_points;
     }
 
     double aspRatio (int [] feret_and_breadth){
@@ -371,4 +464,24 @@ public class Primitive_Measures_ implements PlugInFilter {
     double shape (int area, double perimeter){
         return (perimeter*perimeter)/(double) area;
     }
+
+
+
+    double [] iS (int [] f, int [] b){
+        double [] cS = {0,0};
+
+        double s1= 1/2*(((double)b[0]-b[2])*((double)f[1]-b[3])-((double)b[1]-b[3])*((double)f[0]-b[2]));
+        double s2= 1/2*(((double)b[0]-b[2])*((double)b[3]-f[3])-((double)b[1]-b[3])*((double)b[2]-f[2]));
+
+        //double s1= 1/2*((b[2]-b[0])*(f[3]-b[1])-(b[3]-b[1])*(f[2]-b[0]));
+        //double s2= 1/2*((b[2]-b[0])*(b[1]-f[1])-(b[3]-b[1])*(b[0]-f[0]));
+
+        cS[0]=((f[2])+(s1*(f[0]-f[2])/s1+s2));
+        cS[1]=((f[3])+(s1*(f[1]-f[3])/s1+s2));
+
+        return cS;
+    }
+
+
+
 }
