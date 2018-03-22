@@ -16,7 +16,7 @@ public class Primitive_Measures_ implements PlugInFilter {
     protected ResultsTable rt = ResultsTable.getResultsTable();
     boolean doArea;
     boolean doPerimeter;
-    boolean doMidpoint;
+
     boolean doFeret;
     boolean doBreadth;
 
@@ -30,7 +30,8 @@ public class Primitive_Measures_ implements PlugInFilter {
     boolean doShape;
 
     boolean doIS;
-
+    boolean doMidpoint;
+    boolean doDS;
 
     int [] feret_exstreme_points = {0,0,0,0};
     int [] breadth_exstreme_points = {0,0,0,0};
@@ -47,7 +48,7 @@ public class Primitive_Measures_ implements PlugInFilter {
 
         gd.addCheckbox("Area",true);
         gd.addCheckbox("Perimeter",false);
-        gd.addCheckbox("Midpoint",false);
+
 
         gd.addCheckbox("Feret",true);
         gd.addCheckbox("Breadth",true);
@@ -62,6 +63,8 @@ public class Primitive_Measures_ implements PlugInFilter {
         gd.addCheckbox("Shape", false);
 
         gd.addCheckbox("IS", false);
+        gd.addCheckbox("CG-Midpoint",false);
+        gd.addCheckbox("DS-Distance between IS and CG", false);
 
         //gd.addCheckbox("Show me feret and breadth points.\n Please check Feret and breadth", false);
 
@@ -76,7 +79,6 @@ public class Primitive_Measures_ implements PlugInFilter {
         if(doSelectAll){
             doArea = true;
             doPerimeter = true;
-            doMidpoint = true;
             doFeret= true;
             doBreadth= true;
             doAspRatio = true;
@@ -87,14 +89,13 @@ public class Primitive_Measures_ implements PlugInFilter {
             doEquivEllAr = true ;
             doCompactness = true;
             doIS = true;
+            doMidpoint = true;
+            doDS= true;
         }else{
             doArea = gd.getNextBoolean ();
             doPerimeter = gd.getNextBoolean ();
-            doMidpoint = gd.getNextBoolean ();
-
             doFeret= gd.getNextBoolean ();
             doBreadth= gd.getNextBoolean ();
-
             doAspRatio=gd.getNextBoolean();
             doCirc=gd.getNextBoolean();
             doRoundness=gd.getNextBoolean();
@@ -102,8 +103,9 @@ public class Primitive_Measures_ implements PlugInFilter {
             doPerEquivD=gd.getNextBoolean();
             doEquivEllAr=gd.getNextBoolean();
             doCompactness=gd.getNextBoolean();
-
             doIS=gd.getNextBoolean();
+            doMidpoint = gd.getNextBoolean ();
+            doDS = gd.getNextBoolean ();
 
         }
 
@@ -136,8 +138,8 @@ public class Primitive_Measures_ implements PlugInFilter {
 
         if(doMidpoint){//center
             double [] midpoint = midpoint(ip, xe, ye);
-            rt.addValue("Midpoint X", midpoint[0]);
-            rt.addValue("Midpoint Y", midpoint[1]);
+            rt.addValue("CG Midpoint X", midpoint[0]);
+            rt.addValue("CG Midpoint Y", midpoint[1]);
         }
 
         if(doFeret){
@@ -198,6 +200,13 @@ public class Primitive_Measures_ implements PlugInFilter {
             double [] cS = iS (feret_exstreme_points, breadth_exstreme_points);
             rt.addValue("IS-CSx", cS[0]);
             rt.addValue("IS-CSy", cS[1]);
+
+            ip.putPixelValue((int)cS[0],(int)cS[1], 130);
+        }
+
+        if(doDS){
+            double dS = dS (iS(feret_exstreme_points, breadth_exstreme_points), midpoint(ip, xe, ye));
+            rt.addValue("DS", dS);
         }
 
         for(int i =0; i < 4; i++){
@@ -266,70 +275,6 @@ public class Primitive_Measures_ implements PlugInFilter {
         return ((double)external_perimeter+(double)internal_perimeter)/2;
     }
 
-    public double [] midpoint (ImageProcessor ip_for_midpoint, int xe, int ye){
-        int internal_perimeter= 0;
-        int external_perimeter= 0;
-
-        int [] sum_internal_outline= {0,0};
-        int [] sum_external_outline= {0,0};
-
-        for(int x=0; x<xe; x++ ){
-            for(int y=0; y<ye; y++){
-                //se il pixel è bianco, fa parte dell'oggetto da analizzare dunque viene conteggiato come "pixel area"
-                if(ip_for_midpoint.getPixel(x,y)==255){
-                    //perimetro; solo i bordi interni verranno controllati e conteggiati
-                    if(ip_for_midpoint.getPixel(x-1,y)==0){
-                        internal_perimeter++;
-                        sum_internal_outline[0]+=x;
-                        sum_internal_outline[1]+=y;
-                    } else if (ip_for_midpoint.getPixel(x+1,y)==0) {
-                        internal_perimeter++;
-                        sum_internal_outline[0]+=x;
-                        sum_internal_outline[1]+=y;
-                    }else if (ip_for_midpoint.getPixel(x,y-1)==0){
-                        internal_perimeter++;
-                        sum_internal_outline[0]+=x;
-                        sum_internal_outline[1]+=y;
-                    } else if (ip_for_midpoint.getPixel(x,y+1)==0){
-                        internal_perimeter++;
-                        sum_internal_outline[0]+=x;
-                        sum_internal_outline[1]+=y;
-                    }
-                }else {
-                    if(ip_for_midpoint.getPixel(x-1,y)==255){
-                        sum_external_outline[0]+=x;
-                        sum_external_outline[1]+=y;
-                        external_perimeter++;
-                    } else if (ip_for_midpoint.getPixel(x+1,y)==255) {
-                        sum_external_outline[0]+=x;
-                        sum_external_outline[1]+=y;
-                        external_perimeter++;
-                    }else if (ip_for_midpoint.getPixel(x,y-1)==255){
-                        sum_external_outline[0]+=x;
-                        sum_external_outline[1]+=y;
-                        external_perimeter++;
-                    } else if (ip_for_midpoint.getPixel(x,y+1)==255){
-                        sum_external_outline[0]+=x;
-                        sum_external_outline[1]+=y;
-                        external_perimeter++;
-                    }
-                }
-            }
-        }
-
-        double [] midpoint= {0,0};
-
-        double internal_midpoint_X = (double)sum_internal_outline[0]/internal_perimeter;
-        double internal_midpoint_Y = (double)sum_internal_outline[1]/internal_perimeter;
-
-        double external_midpointX = (double)sum_external_outline[0]/external_perimeter;
-        double external_midpointY = (double)sum_external_outline[1]/external_perimeter;
-
-        midpoint[0] = (internal_midpoint_X + external_midpointX) /2;
-        midpoint[1] = (internal_midpoint_Y + external_midpointY) /2;
-
-        return midpoint;
-    }
 
     public int feret (ImageProcessor ip_for_feret, int xe, int ye){
 
@@ -364,7 +309,7 @@ public class Primitive_Measures_ implements PlugInFilter {
     }
 
     public int breadth (ImageProcessor ip_for_breadth, int xe, int ye) {
-        
+
             for (int x = 0; x < xe; x++) {
                 for (int y = 0; y < ye; y++) {
                     if (ip_for_breadth.getPixel(x, y) == 255) {
@@ -381,7 +326,7 @@ public class Primitive_Measures_ implements PlugInFilter {
                     }
                 }
             }
-            
+
 
             if (itIsFeret(((feret_exstreme_points[1] - feret_exstreme_points[3]) + 1), ((breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1))) {
                 int[] tt = feret_exstreme_points;
@@ -465,22 +410,106 @@ public class Primitive_Measures_ implements PlugInFilter {
         return (perimeter*perimeter)/(double) area;
     }
 
-
-
     double [] iS (int [] f, int [] b){
         double [] cS = {0,0};
 
-        double s1= 1/2*(((double)b[0]-b[2])*((double)f[1]-b[3])-((double)b[1]-b[3])*((double)f[0]-b[2]));
-        double s2= 1/2*(((double)b[0]-b[2])*((double)b[3]-f[3])-((double)b[1]-b[3])*((double)b[2]-f[2]));
+        int xh0=f[0];
+        int yh0=f[1];
+        int xh1=f[2];
+        int yh1=f[3];
 
-        //double s1= 1/2*((b[2]-b[0])*(f[3]-b[1])-(b[3]-b[1])*(f[2]-b[0]));
-        //double s2= 1/2*((b[2]-b[0])*(b[1]-f[1])-(b[3]-b[1])*(b[0]-f[0]));
+        int xw0= b[0];
+        int yw0=b[1];
+        int xw1=b[2];
+        int yw1=b[3];
 
-        cS[0]=((f[2])+(s1*(f[0]-f[2])/s1+s2));
-        cS[1]=((f[3])+(s1*(f[1]-f[3])/s1+s2));
+        double s1= 0.5 *((double) ((xw0-xw1)*(yh0-yw1)-(yw0-yw1)*(xh0-xw1)));
+        double s2= 0.5 * ((double) ((xw0-xw1)*(yw1-yh1)-(yw0-yw1)*(xw1-xh1)));
+
+        cS[0]=(xh0+((s1*(xh1-xh0))/(s1+s2)));
+        cS[1]=(yh0+((s1*(yh1-yh0))/(s1+s2)));
+
+        rt.addValue("s1", s1);
+        rt.addValue("s2", s2);
 
         return cS;
     }
+
+    public double [] midpoint (ImageProcessor ip_for_midpoint, int xe, int ye){
+        int internal_perimeter= 0;
+        int external_perimeter= 0;
+
+        int [] sum_internal_outline= {0,0};
+        int [] sum_external_outline= {0,0};
+
+        for(int x=0; x<xe; x++ ){
+            for(int y=0; y<ye; y++){
+                //se il pixel è bianco, fa parte dell'oggetto da analizzare dunque viene conteggiato come "pixel area"
+                if(ip_for_midpoint.getPixel(x,y)==255){
+                    //perimetro; solo i bordi interni verranno controllati e conteggiati
+                    if(ip_for_midpoint.getPixel(x-1,y)==0){
+                        internal_perimeter++;
+                        sum_internal_outline[0]+=x;
+                        sum_internal_outline[1]+=y;
+                    } else if (ip_for_midpoint.getPixel(x+1,y)==0) {
+                        internal_perimeter++;
+                        sum_internal_outline[0]+=x;
+                        sum_internal_outline[1]+=y;
+                    }else if (ip_for_midpoint.getPixel(x,y-1)==0){
+                        internal_perimeter++;
+                        sum_internal_outline[0]+=x;
+                        sum_internal_outline[1]+=y;
+                    } else if (ip_for_midpoint.getPixel(x,y+1)==0){
+                        internal_perimeter++;
+                        sum_internal_outline[0]+=x;
+                        sum_internal_outline[1]+=y;
+                    }
+                }else {
+                    if(ip_for_midpoint.getPixel(x-1,y)==255){
+                        sum_external_outline[0]+=x;
+                        sum_external_outline[1]+=y;
+                        external_perimeter++;
+                    } else if (ip_for_midpoint.getPixel(x+1,y)==255) {
+                        sum_external_outline[0]+=x;
+                        sum_external_outline[1]+=y;
+                        external_perimeter++;
+                    }else if (ip_for_midpoint.getPixel(x,y-1)==255){
+                        sum_external_outline[0]+=x;
+                        sum_external_outline[1]+=y;
+                        external_perimeter++;
+                    } else if (ip_for_midpoint.getPixel(x,y+1)==255){
+                        sum_external_outline[0]+=x;
+                        sum_external_outline[1]+=y;
+                        external_perimeter++;
+                    }
+                }
+            }
+        }
+
+        double [] midpoint= {0,0};
+
+        double internal_midpoint_X = (double)sum_internal_outline[0]/internal_perimeter;
+        double internal_midpoint_Y = (double)sum_internal_outline[1]/internal_perimeter;
+
+        double external_midpointX = (double)sum_external_outline[0]/external_perimeter;
+        double external_midpointY = (double)sum_external_outline[1]/external_perimeter;
+
+        midpoint[0] = (internal_midpoint_X + external_midpointX) /2;
+        midpoint[1] = (internal_midpoint_Y + external_midpointY) /2;
+
+        return midpoint;
+    }
+
+    double dS(double [] cS, double [] midpoint){
+        double xCs= cS[0];
+        double yCs= cS[1];
+        double xCg= midpoint[0];
+        double yCg= midpoint[1];
+        
+        return  Math.sqrt((Math.pow(xCs-xCg, 2))+(Math.pow(yCs-yCg, 2))); 
+    }
+
+
 
 
 
