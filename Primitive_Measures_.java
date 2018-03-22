@@ -9,11 +9,19 @@ import ij.plugin.MeasurementsWriter;
 import java.util.*;
 import javax.swing.JOptionPane;
 
+/*Plugin-di-prova*/
+/*Il plugin è suddiviso in tre parti principali:
+* una parte di setup e di inizializzazione
+* una seconda parte di run in cui vengono richiamate le funzioni
+* della terza parte per cui sono volte alle measures*/
+
 public class Primitive_Measures_ implements PlugInFilter {
-    ImagePlus imp;
+    ImagePlus imp;//elemento fondamentale per il PluginFilter
     static String title = "prova";
 
     protected ResultsTable rt = ResultsTable.getResultsTable();
+
+    /*booleani per la checkbox in cui l'utente è invitato a selezionare cosa vuole calcolare .. da rivedere*/
     boolean doArea;
     boolean doPerimeter;
 
@@ -32,17 +40,24 @@ public class Primitive_Measures_ implements PlugInFilter {
     boolean doIS;
     boolean doMidpoint;
     boolean doDS;
-
+ //inizializzazione dei punti estremi del feret e del breadth
     int [] feret_exstreme_points = {0,0,0,0};
     int [] breadth_exstreme_points = {0,0,0,0};
+
+    int boundaryPixelsX =0;
+    int boundaryPixelsY =0;
+
+    double pigreco= 3.1415926535;
 
 
     public int setup(String arg, ImagePlus imp) {
         this.imp = imp;
-
+//creazione della finestra di dialogo per checkbox
         GenericDialog gd = new GenericDialog("Primitive_Measures", IJ.getInstance());
         gd.addStringField("Title: ", title);
         gd.addMessage("Choise measures");
+
+        //valori da immettere nella checkbox
 
         gd.addCheckbox("SelectAll",false);
 
@@ -69,14 +84,14 @@ public class Primitive_Measures_ implements PlugInFilter {
         //gd.addCheckbox("Show me feret and breadth points.\n Please check Feret and breadth", false);
 
 
-        gd.showDialog();
+        gd.showDialog(); //show
 
         if (gd.wasCanceled())
             return DONE;
 
-        boolean doSelectAll=gd.getNextBoolean ();
+        boolean doSelectAll=gd.getNextBoolean ();  //se viene selezionata la voce "seleziona tutti"
 
-        if(doSelectAll){
+        if(doSelectAll){ // vengono settati i booleani a true
             doArea = true;
             doPerimeter = true;
             doFeret= true;
@@ -91,7 +106,7 @@ public class Primitive_Measures_ implements PlugInFilter {
             doIS = true;
             doMidpoint = true;
             doDS= true;
-        }else{
+        }else{ //altrimenti pescati uno per uno con un certo ordine
             doArea = gd.getNextBoolean ();
             doPerimeter = gd.getNextBoolean ();
             doFeret= gd.getNextBoolean ();
@@ -112,19 +127,20 @@ public class Primitive_Measures_ implements PlugInFilter {
         return DOES_ALL;
 
     }
-
+/*seconda parte: run. Qui vengono richiamate le funzioni necessarie grazie
+* al settaggio dei booleani. è necessario un ImagePrccessor.*/
     public void run(ImageProcessor ip) {
-        rt.reset();
+        rt.reset(); //reset della finestra per pulirla
 
-        rt.incrementCounter();
+        rt.incrementCounter(); //incremeneto riga (in futurò potra servire
 
         int xe = ip.getWidth(); //larghezza e altezza dell'intera immagine
         int ye = ip.getHeight();
 
-        feret_exstreme_points[3]=ye;
-        breadth_exstreme_points[2]=xe;
+        feret_exstreme_points[3]=ye; //inizializzazione dei punti minori
+        breadth_exstreme_points[2]=xe; //inizializzazione dei punti minori
 
-        int [] feret_and_breadth = {breadth(ip, xe, ye), feret(ip, xe, ye)};
+        int [] feret_and_breadth = {breadth(ip, xe, ye), feret(ip, xe, ye)}; //il calcolo del feret e del breath è necessario
 
         if(doArea){
             int area = area(ip, xe, ye);
@@ -141,16 +157,17 @@ public class Primitive_Measures_ implements PlugInFilter {
             rt.addValue("CG Midpoint X", midpoint[0]);
             rt.addValue("CG Midpoint Y", midpoint[1]);
         }
+        
+        /*il +1 è necessario perchè il primo pixel dell'immagine viene conteggiato ad 0 dunque se io taglio l'immagine 
+        * scopro che vale uno in più rispetto al valore dato senza questo increment
+        * perchè la valutazione viene fatta sul conteggio dei pixel e valutando le coordinate*/
 
         if(doFeret){
-            rt.addValue("Height/Feret of Element", feret_and_breadth[1]);
-
-
+            rt.addValue("Height/Feret of Element", feret_and_breadth[1]+1);
         }
 
         if(doBreadth){
-            rt.addValue("Width/Breadth of Element", feret_and_breadth[0]);
-
+            rt.addValue("Width/Breadth of Element", feret_and_breadth[0]+1);
         }
 
         if(doAspRatio){
@@ -161,13 +178,11 @@ public class Primitive_Measures_ implements PlugInFilter {
         if(doCirc){
             double circ = circ((area(ip, xe, ye)), perimeter(ip, xe, ye));
             rt.addValue("Circ", circ);
-
         }
 
         if(doRoundness){
             double roundness = roundness(area(ip, xe, ye), feret_and_breadth[1]);
             rt.addValue("Roundness", roundness);
-
         }
 
         if(doArEquivD){
@@ -200,13 +215,12 @@ public class Primitive_Measures_ implements PlugInFilter {
             double [] cS = iS (feret_exstreme_points, breadth_exstreme_points);
             rt.addValue("IS-CSx", cS[0]);
             rt.addValue("IS-CSy", cS[1]);
-
-            ip.putPixelValue((int)cS[0],(int)cS[1], 130);
+            ip.putPixelValue((int)cS[0],(int)cS[1], 130); //colorazione per capire quale punto è stato visualizzato
         }
 
         if(doDS){
             double dS = dS (iS(feret_exstreme_points, breadth_exstreme_points), midpoint(ip, xe, ye));
-            rt.addValue("DS", dS);
+            rt.addValue("DS", dS); //distanza tra cS e cG
         }
 
         for(int i =0; i < 4; i++){
@@ -243,6 +257,8 @@ public class Primitive_Measures_ implements PlugInFilter {
         int internal_perimeter=0;
         int external_perimeter=0;
 
+        /*viene calcolato sia il perimetro interno che quello esterno e applicata una media*/
+
         for(int x=0; x<xe; x++ ){
             for(int y=0; y<ye; y++){
                 if(ip_for_perimeter.getPixel(x,y)==255){
@@ -272,11 +288,14 @@ public class Primitive_Measures_ implements PlugInFilter {
         }
 
 
-        return ((double)external_perimeter+(double)internal_perimeter)/2;
+        return ((double)external_perimeter+(double)internal_perimeter)/2; //media tra i due perimetri
     }
 
 
     public int feret (ImageProcessor ip_for_feret, int xe, int ye){
+
+        /*viene calcolata con l'utilizzo del confronto della y con un'altra funzione esterna.
+        * viene effettuato un controllo a fine ciclo per verificare se è stato trovato il feret o il breadth*/
 
         for(int x=0; x<xe; x++ ){
             for(int y=0; y<ye; y++) {
@@ -295,14 +314,16 @@ public class Primitive_Measures_ implements PlugInFilter {
             }
         }
 
-        if(itIsFeret(((feret_exstreme_points[1]-feret_exstreme_points[3])+1), ((breadth_exstreme_points[0]-breadth_exstreme_points[2])+1)))
+        /*se il feret è minore del breadth allora è stato calcolato il breadth dunque si invertono le coordinate*/
+
+        if(itIsFeret(((feret_exstreme_points[1]-feret_exstreme_points[3])), ((breadth_exstreme_points[0]-breadth_exstreme_points[2]))))
         {
-            return ((feret_exstreme_points[1]-feret_exstreme_points[3])+1);
+            return ((feret_exstreme_points[1]-feret_exstreme_points[3]));
         }else{
             int [] tt = feret_exstreme_points;
             feret_exstreme_points=breadth_exstreme_points;
             breadth_exstreme_points=tt;
-            return (feret_exstreme_points[1]-feret_exstreme_points[3])+1; //ricalcola
+            return (feret_exstreme_points[1]-feret_exstreme_points[3]); //ricalcola
         }
 
 
@@ -328,25 +349,26 @@ public class Primitive_Measures_ implements PlugInFilter {
             }
 
 
-            if (itIsFeret(((feret_exstreme_points[1] - feret_exstreme_points[3]) + 1), ((breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1))) {
+            if (itIsFeret(((feret_exstreme_points[1] - feret_exstreme_points[3])), ((breadth_exstreme_points[0] - breadth_exstreme_points[2])))) {
                 int[] tt = feret_exstreme_points;
                 feret_exstreme_points = breadth_exstreme_points;
                 breadth_exstreme_points = tt;
-                return (breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1;//ricalcola
+                return (breadth_exstreme_points[0] - breadth_exstreme_points[2]);//ricalcola
             } else {
-                return (breadth_exstreme_points[0] - breadth_exstreme_points[2]) + 1;
+                return (breadth_exstreme_points[0] - breadth_exstreme_points[2]);
             }
 
     }
 
 
     int[] feret_exstreme_points(int x, int y, int [] feret_exstreme_points){
-        if(feret_exstreme_points[1]<y){
+        /*supporto del calcolo delle coordinate del feret*/
+        if(feret_exstreme_points[1]<=y){
             feret_exstreme_points[1]=y;
             feret_exstreme_points[0]=x;
         }
 
-        if(feret_exstreme_points[3]>y){
+        if(feret_exstreme_points[3]>=y){
             feret_exstreme_points[3]=y;
             feret_exstreme_points[2]=x;
         }
@@ -355,45 +377,44 @@ public class Primitive_Measures_ implements PlugInFilter {
     }
 
     int[] breadth_exstreme_points(int x, int y, int [] breadth_exstreme_points){
-        if(breadth_exstreme_points[0]<x){
+        /*supporto del calcolo delle coordinate del breadth*/
+        if(breadth_exstreme_points[0]<=x){
             breadth_exstreme_points[1]=y;
             breadth_exstreme_points[0]=x;
         }
-        if(breadth_exstreme_points[2]>x){
+        if(breadth_exstreme_points[2]>=x){
             breadth_exstreme_points[3]=y;
             breadth_exstreme_points[2]=x;
         }
         return breadth_exstreme_points;
     }
 
-    double aspRatio (int [] feret_and_breadth){
-        return feret_and_breadth[1]/feret_and_breadth[0];
-    }
-
     boolean itIsFeret (int feret, int breadth){
+        //funziona booleana di supporto per il feret
         return feret>=breadth;
     }
 
-    double roundness (int area, int feret){
-        double pigreco= 3.1415926535;
+    double aspRatio (int [] feret_and_breadth){
+        //formula presa dal foglip
+        return feret_and_breadth[1]/feret_and_breadth[0];
+    }
 
-        return (4 * (double)area )/ pigreco * ((double) feret * feret);
+
+    double roundness (int area, int feret){
+     return (4 * (double)area )/ pigreco * ((double) feret * feret);
 
     }
 
     double circ (int area, double perim){
-        double pigreco= 3.1415926535;
         return (4*(double)area)/(perim*perim);
     }
 
     double arEquivD(int area){
-        double pigreco= 3.1415926535;
         return Math.sqrt((4*pigreco)*(double)area);
 
     }
 
     double perEquivD(int area){
-        double pigreco= 3.1415926535;
         return (double)area/pigreco;
     }
 
@@ -402,7 +423,6 @@ public class Primitive_Measures_ implements PlugInFilter {
     }
 
     double equivEllAr(int [] feret_and_breadth){
-        double pigreco= 3.1415926535;
         return (pigreco*(double)feret_and_breadth[1]*(double)feret_and_breadth[0])/4;
     }
 
@@ -411,6 +431,7 @@ public class Primitive_Measures_ implements PlugInFilter {
     }
 
     double [] iS (int [] f, int [] b){
+        /*calcolo della intersezione tra lenght e width con le coordinate del feret e breadth*/
         double [] cS = {0,0};
 
         int xh0=f[0];
@@ -441,6 +462,12 @@ public class Primitive_Measures_ implements PlugInFilter {
 
         int [] sum_internal_outline= {0,0};
         int [] sum_external_outline= {0,0};
+
+        /*calcolo del centro della massa
+        * valutazione solo nei pixel bianchi, pixel dell'oggetto analizzato
+        * ricalcolo del pixel interno e del pixel esterno
+        * si conteggiano i valori delle y e delle x interni ed esterni con i due vettori contatori sum_internal_outline e sum_external_outline
+         * dove 0 è la x e 1 è la y*/
 
         for(int x=0; x<xe; x++ ){
             for(int y=0; y<ye; y++){
@@ -494,6 +521,11 @@ public class Primitive_Measures_ implements PlugInFilter {
         double external_midpointX = (double)sum_external_outline[0]/external_perimeter;
         double external_midpointY = (double)sum_external_outline[1]/external_perimeter;
 
+        boundaryPixelsX=sum_internal_outline[0];
+        boundaryPixelsY=sum_internal_outline[1];
+
+        //si fa la media
+
         midpoint[0] = (internal_midpoint_X + external_midpointX) /2;
         midpoint[1] = (internal_midpoint_Y + external_midpointY) /2;
 
@@ -501,12 +533,13 @@ public class Primitive_Measures_ implements PlugInFilter {
     }
 
     double dS(double [] cS, double [] midpoint){
+        /*distanza tra i pixel tra il punto di intersezione e il punto del centro*/
         double xCs= cS[0];
         double yCs= cS[1];
         double xCg= midpoint[0];
         double yCg= midpoint[1];
-        
-        return  Math.sqrt((Math.pow(xCs-xCg, 2))+(Math.pow(yCs-yCg, 2))); 
+
+        return  Math.sqrt((Math.pow(xCs-xCg, 2))+(Math.pow(yCs-yCg, 2)));
     }
 
 
