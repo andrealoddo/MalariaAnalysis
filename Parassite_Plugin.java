@@ -30,6 +30,7 @@ public class Parassite_Plugin implements PlugIn {
         Analyzer.getResultsTable().show("Results");
     }
     //cuore
+    /*è una classe interna dichiarata nella classe Parassite_Plugin*/
 
     class Parassite extends ParticleAnalyzer {
         @Override
@@ -40,11 +41,17 @@ public class Parassite_Plugin implements PlugIn {
             ip.setRoi(roi);
             float[] areas = rt.getColumn(ResultsTable.AREA);
             float[] ferets = rt.getColumn(ResultsTable.FERET);
+            float [] breadths =  rt.getColumn(ResultsTable.MIN_FERET);
             float[] perims = rt.getColumn(ResultsTable.PERIMETER);
             for (int i = 0; i < areas.length; i++) {
                 rt.addValue("Roundness", (areas[i] * 4) / ((pigreco) * (ferets[i] * ferets[i])));
+                rt.addValue("aspRatio", ferets[i]/breadths[i]);
                 rt.addValue("Circ", 4 * areas[i] / (perims[i] * perims[i]));
                 rt.addValue("ArEquivD", Math.sqrt((4 * pigreco) * areas[i]));
+                rt.addValue("doPerEquivD", areas[i]/pigreco);
+                rt.addValue("EquivEllAr", (pigreco*ferets[i]*breadths[i])/4);
+                rt.addValue("Shape", (perims[i]*perims[i])/areas[i]);
+
             }
 
 
