@@ -5,13 +5,15 @@ import ij.plugin.filter.*;
 import ij.process.*;
 import ij.gui.*;
 import java.awt.*;
+import ij.plugin.filter.Analyzer;
 
-/*PlugIn di prova per poter aggiungere funzionalità ad Partiche Analyzer.
+
+/*PlugIn di prova per poter aggiungere funzionalitï¿½ ad Partiche Analyzer.
  * la classe Parassite_Plugin implementa l'interfaccia PlugIn*/
 
 
 public class Parassite_Plugin implements PlugIn {
-    /*booleani per la checkbox in cui l'utente è invitato a selezionare cosa vuole calcolare .. da rivedere*/
+    /*booleani per la checkbox in cui l'utente ï¿½ invitato a selezionare cosa vuole calcolare .. da rivedere*/
     boolean doArea;
     boolean doPerimeter;
 
@@ -28,6 +30,7 @@ public class Parassite_Plugin implements PlugIn {
     boolean doShape;
     boolean doArBBox;
     boolean doRectang;
+    boolean doConvexArea;
 
     boolean doIS;
     boolean doMidpoint;
@@ -50,7 +53,7 @@ public class Parassite_Plugin implements PlugIn {
 
         int flags = pa.setup("", imp); //runna
         if (flags == PlugInFilter.DONE)
-        return; //se è tutto ok runna
+            return; //se ï¿½ tutto ok runna
         pa.run(imp.getProcessor());
         Analyzer.getResultsTable().show("Results");
 
@@ -73,7 +76,9 @@ public class Parassite_Plugin implements PlugIn {
         gd.addCheckbox("Shape", false);
         gd.addCheckbox("ArBBox", false);
         gd.addCheckbox("Rectang", false);
-        
+
+        gd.addCheckbox("Convex Area", false);
+
 
         gd.showDialog(); //show
 
@@ -93,6 +98,7 @@ public class Parassite_Plugin implements PlugIn {
             doShape = true;
             doArBBox =true;
             doRectang = true;
+            doConvexArea = true;
         }else{ //altrimenti pescati uno per uno con un certo ordine
             doAspRatio=gd.getNextBoolean();
             doCirc=gd.getNextBoolean();
@@ -104,12 +110,44 @@ public class Parassite_Plugin implements PlugIn {
             doShape=gd.getNextBoolean();
             doArBBox =gd.getNextBoolean();
             doRectang = gd.getNextBoolean();
+            doConvexArea = gd.getNextBoolean();
         }
 
 
     }
+
+
+    /*Mi servirÃ  poi
+    int ms = 0;
+        ms |= ana.AREA+ana.PERIMETER+ana.ELLIPSE+ana.CENTER_OF_MASS;
+        ana.setMeasurements(ms);
+        ImageStatistics stats = img.getStatistics(ms);*/
+    public void convexHull(){
+        float perimeterOfHull;
+        float AREAofHull = 0;
+        float major, minor;
+
+    }
+
+    //da Analyzer
+    final double getArea(Polygon p) {
+        if (p==null) return Double.NaN;
+        int carea = 0;
+        int iminus1;
+        for (int i=0; i<p.npoints; i++) {
+            iminus1 = i-1;
+            if (iminus1<0) iminus1=p.npoints-1;
+            carea += (p.xpoints[i]+p.xpoints[iminus1])*(p.ypoints[i]-p.ypoints[iminus1]);
+        }
+        return (Math.abs(carea/2.0));
+    }
+    //
+
+
+
     //cuore
-    /*è una classe interna dichiarata nella classe Parassite_Plugin*/
+
+    /*ï¿½ una classe interna dichiarata nella classe Parassite_Plugin*/
 
     class Parassite extends ParticleAnalyzer {
         @Override
@@ -144,6 +182,15 @@ public class Parassite_Plugin implements PlugIn {
                 if(doRectang)
                     rt.addValue("Rectang", areas[i]/(ferets[i]*breadths[i]));
 
+                if(doConvexArea){
+                    double convexArea = roi!=null?getArea(roi.getConvexHull()):stats.pixelCount;
+                    rt.addValue("ConvexArea", convexArea);
+                }
+
+               // Polygon convexRoi = roi.getConvexHull();
+
+
+
             }
 
 
@@ -151,3 +198,4 @@ public class Parassite_Plugin implements PlugIn {
 
     }
 }
+
