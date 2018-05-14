@@ -27,6 +27,7 @@ import ij.plugin.MeasurementsWriter;
 
 public class Catch_Parasite_ implements PlugIn {
     /*booleani per la checkbox in cui l'utente ? invitato a selezionare cosa vuole calcolare .. da rivedere*/
+
     //ConvexHull data
     boolean doConvexArea;
     boolean doConvexPerimeter;
@@ -49,12 +50,6 @@ public class Catch_Parasite_ implements PlugIn {
     boolean doMidpoint;
     boolean doDS;
 
-    //private int measurements;
-   // private static int systemMeasurements = Prefs.getInt(MEASUREMENTS,ANGLE+AREA+ASPECT_RATIO+CIRCULARITY+FERET+FERET_ANGLE+FERET_X+FERET_Y+KURTOIS+MAJOR+MAX+MEAN+MEDIAN+MIN+MIN_FERET+MODE+PERIMETER+ROW_HEIGHT+ROI_WIDTH+ROY_X+ROY_Y+ROUNDNESS+SKEWNESS+SLICE+SOLIDITY+STD_DEV+X_CENTER_OF_MASS+X_CENTROID+Y_CENTER_OF_MASS+Y_CENTROID);
-
-
-
-
     //pigreco necessario per alcuni calcoli
 
     double pigreco= 3.1415926535;
@@ -69,12 +64,11 @@ public class Catch_Parasite_ implements PlugIn {
     public void analyzeParticles(ImagePlus imp) {
         //crea un nuovo oggetto Parassite
         //crea flags, che prende setup
-        genericDialog();
+        //genericDialog();
         Parasite pa = new Parasite();
-
         int flags = pa.setup("", imp); //runna
         if (flags == PlugInFilter.DONE)
-            return; //se ? tutto ok runna
+          return; //se ? tutto ok runna
         pa.run(imp.getProcessor());
         Analyzer.getResultsTable().show("Results");
 
@@ -83,7 +77,7 @@ public class Catch_Parasite_ implements PlugIn {
     /*Finestra di dialogo:
     la funzione è volta ad aprire una finestra di dialogo per cui l'utente setta tutte le misure che vuole implementare.
     * */
-    public void genericDialog(){
+    public boolean genericDialog(){
         GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
         gd.addStringField("Title: ", "Catch parasite");
         gd.addMessage("Choise measures");
@@ -111,8 +105,8 @@ public class Catch_Parasite_ implements PlugIn {
         gd.addCheckbox("Elongation", false);
         gd.showDialog(); //show
 
-        //if (gd.wasCanceled())
-        //return DONE;
+        if (gd.wasCanceled())
+        return false;
 
         boolean doSelectAll=gd.getNextBoolean ();  //se viene selezionata la voce "seleziona tutti"
 
@@ -153,6 +147,8 @@ public class Catch_Parasite_ implements PlugIn {
             doElongation = gd.getNextBoolean();
 
         }
+
+        return true;
 
 
     }
@@ -212,6 +208,47 @@ public class Catch_Parasite_ implements PlugIn {
     /*? una classe interna dichiarata nella classe Parassite_Plugin*/
 
     class Parasite extends ParticleAnalyzer {
+
+        int old_measures = Analyzer.getMeasurements();
+        /*int necessary_measures =
+                ADD_TO_OVERLAY+
+                AREA+
+                AREA_FRACTION+
+                CENTER_OF_MASS+
+                CENTROID+
+                CIRCULARITY+
+                FERET+
+                MEAN+
+                MEDIAN+
+                MIN_MAX+
+                MODE+
+                PERIMETER+
+                SHAPE_DESCRIPTORS+
+                STD_DEV+
+                STACK_POSITION;*/
+        int necessary_measures =
+                ALL_STATS
+                -KURTOSIS
+                -NaN_EMPTY_CELLS
+                -INVERT_Y
+                -INTEGRATED_DENSITY
+                +SHAPE_DESCRIPTORS
+                ;
+
+
+        //*protected static final int NOTHING=0, OUTLINES=1, BARE_OUTLINES=2, ELLIPSES=3, MASKS=4, ROI_MASKS=5,
+        //            OVERLAY_OUTLINES=6, OVERLAY_MASKS=7;*//
+        @Override
+        public boolean showDialog(){
+            boolean flag = super.showDialog();
+            //setto solo quello che mi serve
+            Analyzer.setMeasurements(necessary_measures);
+            //Analyzer.setMeasurements(AREA);
+            return genericDialog();
+        }
+
+
+        //SAVE RESULT
         @Override
         protected void saveResults(ImageStatistics stats, Roi roi) {
             super.saveResults(stats, roi);
@@ -228,7 +265,6 @@ public class Catch_Parasite_ implements PlugIn {
             double convexPerimeter = getPerimeter(roi.getConvexHull());
             //double peri = roi!=null?getPerimeter(roi.getConvexHull()):stats.pixelCount;
 
-            rt.setDefaultHeadings("Area");
 
             for (int i = 0; i < areas.length; i++) {
                 if(doConvexArea)
@@ -265,6 +301,8 @@ public class Catch_Parasite_ implements PlugIn {
                     rt.addValue("*Elongation", (perims[i]*perims[i])/(4*pigreco*areas[i]));
 
             }
+
+            Analyzer.setMeasurements(old_measures);
         }
     }
 }
