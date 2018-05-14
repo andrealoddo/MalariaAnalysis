@@ -12,13 +12,11 @@ import ij.plugin.filter.Analyzer;
  * la classe Parassite_Plugin implementa l'interfaccia PlugIn*/
 
 
-public class Parassite_Plugin implements PlugIn {
+public class Parassite_Plugin2 implements PlugIn {
     /*booleani per la checkbox in cui l'utente � invitato a selezionare cosa vuole calcolare .. da rivedere*/
-    boolean doArea;
-    boolean doPerimeter;
 
-    boolean doFeret;
-    boolean doBreadth;
+    boolean doConvexArea;
+    boolean doConvexPerimeter;
 
     boolean doAspRatio;
     boolean doCirc;
@@ -28,9 +26,10 @@ public class Parassite_Plugin implements PlugIn {
     boolean doEquivEllAr;
     boolean doCompactness;
     boolean doShape;
+    boolean doRFactor;
     boolean doArBBox;
     boolean doRectang;
-    boolean doConvexArea;
+
 
     boolean doIS;
     boolean doMidpoint;
@@ -64,7 +63,10 @@ public class Parassite_Plugin implements PlugIn {
         gd.addStringField("Title: ", "PROVA");
         gd.addMessage("Choise measures");
 
-        gd.addCheckbox("SelectAll",false);
+        gd.addCheckbox("SelectAll",true);
+
+        gd.addCheckbox("Convex Area", false);
+        gd.addCheckbox("Convex Perimeter", false);
 
         gd.addCheckbox("AspRatio",false);
         gd.addCheckbox("Circ", false);
@@ -74,10 +76,12 @@ public class Parassite_Plugin implements PlugIn {
         gd.addCheckbox("EquivEllAr", false);
         gd.addCheckbox("Compactness", false);
         gd.addCheckbox("Shape", false);
+
+        gd.addCheckbox("RFactor", false);
+
         gd.addCheckbox("ArBBox", false);
         gd.addCheckbox("Rectang", false);
 
-        gd.addCheckbox("Convex Area", false);
 
 
         gd.showDialog(); //show
@@ -88,6 +92,8 @@ public class Parassite_Plugin implements PlugIn {
         boolean doSelectAll=gd.getNextBoolean ();  //se viene selezionata la voce "seleziona tutti"
 
         if(doSelectAll){ // vengono settati i booleani a true
+            doConvexArea = true;
+            doConvexPerimeter=true;
             doAspRatio = true;
             doCirc = true;
             doRoundness = true;
@@ -95,11 +101,15 @@ public class Parassite_Plugin implements PlugIn {
             doPerEquivD = true;
             doEquivEllAr = true ;
             doCompactness = true;
+
             doShape = true;
+            doRFactor = true;
             doArBBox =true;
             doRectang = true;
-            doConvexArea = true;
+
         }else{ //altrimenti pescati uno per uno con un certo ordine
+            doConvexArea = gd.getNextBoolean();
+            doConvexPerimeter = gd.getNextBoolean();
             doAspRatio=gd.getNextBoolean();
             doCirc=gd.getNextBoolean();
             doRoundness=gd.getNextBoolean();
@@ -108,26 +118,15 @@ public class Parassite_Plugin implements PlugIn {
             doEquivEllAr=gd.getNextBoolean();
             doCompactness=gd.getNextBoolean();
             doShape=gd.getNextBoolean();
+            doRFactor=gd.getNextBoolean();
             doArBBox =gd.getNextBoolean();
             doRectang = gd.getNextBoolean();
-            doConvexArea = gd.getNextBoolean();
+
         }
 
 
     }
 
-
-    /*Mi servirà poi
-    int ms = 0;
-        ms |= ana.AREA+ana.PERIMETER+ana.ELLIPSE+ana.CENTER_OF_MASS;
-        ana.setMeasurements(ms);
-        ImageStatistics stats = img.getStatistics(ms);*/
-    public void convexHull(){
-        float perimeterOfHull;
-        float AREAofHull = 0;
-        float major, minor;
-
-    }
 
     //da Analyzer
     final double getArea(Polygon p) {
@@ -139,11 +138,42 @@ public class Parassite_Plugin implements PlugIn {
             if (iminus1<0) iminus1=p.npoints-1;
             carea += (p.xpoints[i]+p.xpoints[iminus1])*(p.ypoints[i]-p.ypoints[iminus1]);
         }
+
+        //return (double) p.npoints;
         return (Math.abs(carea/2.0));
+    }
+
+    final double getPerimeter (Polygon p){
+        if(p==null) return  Double.NaN;
+
+        double cperimeter = 0.0;
+
+        for(int i=0; i < p.npoints-1; i++){
+            double x1 =(double) p.xpoints[i];
+            double y1 =(double) p.ypoints[i];
+
+            double x2 =(double) p.xpoints[i+1];
+            double y2 =(double) p.ypoints[i+1];
+
+            cperimeter +=Math.sqrt(((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1)));
+                    /*
+                    p.xpoints[i] p.ypoints[i] punto A
+                    p.xpoints[i+1] p.ypoints[i+1] punto B
+                    * */
+        }
+
+        return cperimeter;
     }
     //
 
-
+    /*
+    * // return the perimeter
+    public double perimeter() {
+        double sum = 0.0;
+        for (int i = 0; i < N; i++)
+            sum = sum + a[i].distanceTo(a[i+1]);
+        return sum;
+    }
 
     //cuore
 
@@ -159,8 +189,13 @@ public class Parassite_Plugin implements PlugIn {
             float[] ferets = rt.getColumn(ResultsTable.FERET);
             float [] breadths =  rt.getColumn(ResultsTable.MIN_FERET);
             float[] perims = rt.getColumn(ResultsTable.PERIMETER);
-            for (int i = 0; i < areas.length; i++) {
+            double convexArea = roi!=null?getArea(roi.getConvexHull()):stats.pixelCount;
+            double peri = getPerimeter(roi.getConvexHull());
+            //double peri = roi!=null?getPerimeter(roi.getConvexHull()):stats.pixelCount;
 
+            for (int i = 0; i < areas.length; i++) {
+                if(doConvexArea)
+                    rt.addValue("ConvexArea", convexArea);
                 if(doAspRatio)
                     rt.addValue("aspRatio", ferets[i]/breadths[i]);
                 if (doCirc)
@@ -177,15 +212,19 @@ public class Parassite_Plugin implements PlugIn {
                     rt.addValue("Compactness", (Math.sqrt((4 * pigreco) * areas[i]))/ferets[i]);
                 if(doShape)
                     rt.addValue("Shape", (perims[i]*perims[i])/areas[i]);
+                if(doRFactor)
+                    rt.addValue("RFactor", convexArea/(ferets[i]*pigreco));
                 if(doArBBox)
                     rt.addValue("ArBBox", ferets[i]*breadths[i]);
                 if(doRectang)
                     rt.addValue("Rectang", areas[i]/(ferets[i]*breadths[i]));
-
-                if(doConvexArea){
-                    double convexArea = roi!=null?getArea(roi.getConvexHull()):stats.pixelCount;
-                    rt.addValue("ConvexArea", convexArea);
+                if(doConvexPerimeter){
+                    rt.addValue("PerimeterConvexHull", peri);
                 }
+
+
+
+
 
                // Polygon convexRoi = roi.getConvexHull();
 
