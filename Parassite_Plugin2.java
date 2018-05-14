@@ -133,12 +133,19 @@ public class Parassite_Plugin2 implements PlugIn {
         if (p==null) return Double.NaN;
         int carea = 0;
         int iminus1;
+        /*ciclo originale
         for (int i=0; i<p.npoints; i++) {
             iminus1 = i-1;
             if (iminus1<0) iminus1=p.npoints-1;
             carea += (p.xpoints[i]+p.xpoints[iminus1])*(p.ypoints[i]-p.ypoints[iminus1]);
-        }
+        }*/
 
+        for(int i =0; i<p.npoints-1;i++){
+            iminus1=i-1;
+            if(iminus1<0) iminus1=p.npoints-1;
+            carea+=(p.xpoints[i]+p.xpoints[iminus1])*(p.ypoints[i]-p.ypoints[iminus1]);
+        }
+        //lo triangolizza?
         //return (double) p.npoints;
         return (Math.abs(carea/2.0));
     }
@@ -147,19 +154,34 @@ public class Parassite_Plugin2 implements PlugIn {
         if(p==null) return  Double.NaN;
 
         double cperimeter = 0.0;
+        int iminus1;
 
         for(int i=0; i < p.npoints-1; i++){
+            /*vecchio
+             p.xpoints[i] p.ypoints[i] punto A
+              p.xpoints[i+1] p.ypoints[i+1] punto B
+            * */
+            /*
             double x1 =(double) p.xpoints[i];
             double y1 =(double) p.ypoints[i];
 
-            double x2 =(double) p.xpoints[i+1];
-            double y2 =(double) p.ypoints[i+1];
+            double x2 =(double) p.xpoints[i-1];
+            double y2 =(double) p.ypoints[i-1];
 
             cperimeter +=Math.sqrt(((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1)));
-                    /*
-                    p.xpoints[i] p.ypoints[i] punto A
-                    p.xpoints[i+1] p.ypoints[i+1] punto B
-                    * */
+            /**/
+
+            iminus1=i-1;
+            if(iminus1<0) iminus1 = p.npoints-1;
+
+            double x1 =(double) p.xpoints[i];
+            double y1 =(double) p.ypoints[i];
+
+            double x2 =(double) p.xpoints[iminus1];
+            double y2 =(double) p.ypoints[iminus1];
+
+            cperimeter +=Math.sqrt(((x2-x1)*(x2-x1))+((y2-y1)*(y2-y1)));
+            /**/
         }
 
         return cperimeter;
@@ -189,13 +211,16 @@ public class Parassite_Plugin2 implements PlugIn {
             float[] ferets = rt.getColumn(ResultsTable.FERET);
             float [] breadths =  rt.getColumn(ResultsTable.MIN_FERET);
             float[] perims = rt.getColumn(ResultsTable.PERIMETER);
-            double convexArea = roi!=null?getArea(roi.getConvexHull()):stats.pixelCount;
+            //double convexArea = roi!=null?getArea(roi.getConvexHull()):stats.pixelCount;
+            double convexArea = getArea(roi.getConvexHull());
             double peri = getPerimeter(roi.getConvexHull());
             //double peri = roi!=null?getPerimeter(roi.getConvexHull()):stats.pixelCount;
 
             for (int i = 0; i < areas.length; i++) {
                 if(doConvexArea)
                     rt.addValue("ConvexArea", convexArea);
+                if(doConvexPerimeter)
+                    rt.addValue("PerimeterConvexHull", peri);
                 if(doAspRatio)
                     rt.addValue("aspRatio", ferets[i]/breadths[i]);
                 if (doCirc)
@@ -218,9 +243,7 @@ public class Parassite_Plugin2 implements PlugIn {
                     rt.addValue("ArBBox", ferets[i]*breadths[i]);
                 if(doRectang)
                     rt.addValue("Rectang", areas[i]/(ferets[i]*breadths[i]));
-                if(doConvexPerimeter){
-                    rt.addValue("PerimeterConvexHull", peri);
-                }
+
 
 
 
