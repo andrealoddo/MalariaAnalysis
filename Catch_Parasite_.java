@@ -4,10 +4,12 @@ import ij.plugin.*;
 import ij.plugin.filter.*;
 import ij.process.*;
 import ij.gui.*;
-import java.awt.*;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.MeasurementsWriter;
-
+import ij.plugin.frame.ThresholdAdjuster;
+import ij.plugin.ChannelSplitter;
+import ij.plugin.Thresholder;
+import java.awt.*;
 
 /*PlugIn di prova per poter aggiungere funzionalit? ad Partiche Analyzer.
  * la classe Parassite_Plugin implementa l'interfaccia PlugIn*/
@@ -31,7 +33,7 @@ public class Catch_Parasite_ implements PlugIn {
     //ConvexHull data
     boolean doConvexArea;
     boolean doConvexPerimeter;
-
+    boolean doMINRMAXR;
     boolean doAspRatio;
     boolean doCirc;
     boolean doRoundness;
@@ -44,15 +46,17 @@ public class Catch_Parasite_ implements PlugIn {
     boolean doRFactor;
     boolean doArBBox;
     boolean doRectang;
+    boolean doModRatio;
+    boolean doSphericity;
     boolean doHaralickRatio;//non funziona
     boolean doElongation;
-    boolean doIS;
-    boolean doMidpoint;
-    boolean doDS;
+    boolean doNormPeriIndex;
+
 
     //pigreco necessario per alcuni calcoli
 
     double pigreco= 3.1415926535;
+
 
     public void run(String arg) {
         //Restituisce un riferimento all'immagine attiva o visualizza un messaggio
@@ -68,10 +72,9 @@ public class Catch_Parasite_ implements PlugIn {
         Parasite pa = new Parasite();
         int flags = pa.setup("", imp); //runna
         if (flags == PlugInFilter.DONE)
-          return; //se ? tutto ok runna
+                return; //se ? tutto ok runna
         pa.run(imp.getProcessor());
         Analyzer.getResultsTable().show("Results");
-
     }
 
     /*Finestra di dialogo:
@@ -81,11 +84,13 @@ public class Catch_Parasite_ implements PlugIn {
         GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
         gd.addStringField("Title: ", "Catch parasite");
         gd.addMessage("Choise measures");
+        gd.addMessage("The measures area, perim, feret, feret min are necessary for the PlugIn");
 
         gd.addCheckbox("SelectAll",true);
 
         gd.addCheckbox("Convex Area", false);
         gd.addCheckbox("Convex Perimeter", false);
+        gd.addCheckbox("MinR and MaxR", false);
 
         gd.addCheckbox("AspRatio",false);
         gd.addCheckbox("Circ", false);
@@ -101,8 +106,11 @@ public class Catch_Parasite_ implements PlugIn {
 
         gd.addCheckbox("ArBBox", false);
         gd.addCheckbox("Rectang", false);
+        gd.addCheckbox("ModRatio", false);
+        gd.addCheckbox("Sphericity", false);
         gd.addCheckbox("HaralickRatio", false);
         gd.addCheckbox("Elongation", false);
+        gd.addCheckbox("NormPeriIndex", false);
         gd.showDialog(); //show
 
         if (gd.wasCanceled())
@@ -113,6 +121,7 @@ public class Catch_Parasite_ implements PlugIn {
         if(doSelectAll){ // vengono settati i booleani a true
             doConvexArea = true;
             doConvexPerimeter=true;
+            doMINRMAXR=true;
             doAspRatio = true;
             doCirc = true;
             doRoundness = true;
@@ -125,12 +134,15 @@ public class Catch_Parasite_ implements PlugIn {
             doRFactor = true;
             doArBBox =true;
             doRectang = true;
+            doModRatio= true;
+            doSphericity =true;
             doHaralickRatio=true;
             doElongation=true;
-
+            doNormPeriIndex=true;
         }else{ //altrimenti pescati uno per uno con un certo ordine
             doConvexArea = gd.getNextBoolean();
             doConvexPerimeter = gd.getNextBoolean();
+            doMINRMAXR=gd.getNextBoolean();
             doAspRatio=gd.getNextBoolean();
             doCirc=gd.getNextBoolean();
             doRoundness=gd.getNextBoolean();
@@ -143,14 +155,21 @@ public class Catch_Parasite_ implements PlugIn {
             doRFactor=gd.getNextBoolean();
             doArBBox =gd.getNextBoolean();
             doRectang = gd.getNextBoolean();
+            doModRatio = gd.getNextBoolean();
+            doSphericity= gd.getNextBoolean();
             doHaralickRatio = gd.getNextBoolean();
             doElongation = gd.getNextBoolean();
-
+            doNormPeriIndex= gd.getNextBoolean();
         }
 
         return true;
 
 
+    }
+
+    //da sistemare
+    public void setImage(){
+        ThresholdAdjuster th = new ThresholdAdjuster();
     }
 
 
@@ -204,38 +223,28 @@ public class Catch_Parasite_ implements PlugIn {
         return cperimeter;
     }
 
+    /*double [] getMinRMaxR(float xCenterOfMass, float yCenterOfMass){
+        double [] minR_maxR;
+
+        return minR_maxR;
+    }*/
+
+
+
     //cuore
     /*? una classe interna dichiarata nella classe Parassite_Plugin*/
 
     class Parasite extends ParticleAnalyzer {
 
         int old_measures = Analyzer.getMeasurements();
-        /*int necessary_measures =
-                ADD_TO_OVERLAY+
-                AREA+
-                AREA_FRACTION+
-                CENTER_OF_MASS+
-                CENTROID+
-                CIRCULARITY+
-                FERET+
-                MEAN+
-                MEDIAN+
-                MIN_MAX+
-                MODE+
-                PERIMETER+
-                SHAPE_DESCRIPTORS+
-                STD_DEV+
-                STACK_POSITION;*/
         int necessary_measures =
-                ALL_STATS
+                ALL_STATS +SHAPE_DESCRIPTORS
                 -KURTOSIS
                 -NaN_EMPTY_CELLS
                 -INVERT_Y
                 -INTEGRATED_DENSITY
-                +SHAPE_DESCRIPTORS
                 ;
-
-
+        
         //*protected static final int NOTHING=0, OUTLINES=1, BARE_OUTLINES=2, ELLIPSES=3, MASKS=4, ROI_MASKS=5,
         //            OVERLAY_OUTLINES=6, OVERLAY_MASKS=7;*//
         @Override
@@ -254,55 +263,74 @@ public class Catch_Parasite_ implements PlugIn {
             super.saveResults(stats, roi);
             ImageProcessor ip = imp.getProcessor();
             ip.setRoi(roi);
-            float[] meanRadius= rt.getColumn(ResultsTable.MEAN);
-            float[] standardDeviationOfRadii= rt.getColumn(ResultsTable.STD_DEV);
             float[] areas = rt.getColumn(ResultsTable.AREA);
             float[] ferets = rt.getColumn(ResultsTable.FERET);
-            float [] breadths =  rt.getColumn(ResultsTable.MIN_FERET);
+            float[] breadths =  rt.getColumn(ResultsTable.MIN_FERET);
             float[] perims = rt.getColumn(ResultsTable.PERIMETER);
             //double convexArea = roi!=null?getArea(roi.getConvexHull()):stats.pixelCount;
             double convexArea = getArea(roi.getConvexHull());
             double convexPerimeter = getPerimeter(roi.getConvexHull());
             //double peri = roi!=null?getPerimeter(roi.getConvexHull()):stats.pixelCount;
 
-
             for (int i = 0; i < areas.length; i++) {
-                if(doConvexArea)
+               // double [] minR_maxR = getMinRMaxR(stats.xCenterOfMass, stats.yCenterOfMass);
+                if(doConvexArea) //Area of the convex hull polygon
                     rt.addValue("*ConvexArea", convexArea);
-                if(doConvexPerimeter)
+                if(doConvexPerimeter) //Perimeter of the convex hull polygon
                     rt.addValue("*PerimeterConvexHull", convexPerimeter);
-                if(doAspRatio)
+                //MINR E MAXR PROVA, inteso come raggio del cerchio più piccolo e più grande prendendo come diametro il FERET e il BREADTH
+                if(doMINRMAXR){ //
+                    rt.addValue("*MinR",breadths[i]/2 ); //DA RIVEDERE Radius of the inscribed circle centred at the middle of mass
+                    rt.addValue("*MaxR",ferets[i]/2); //DA RIVEDERE Radius of the enclosing circle centred at the middle of mass
+                }
+                if(doAspRatio) //Aspect ratio = Feret/Breadth = L/W also called Feret ratio or Eccentricity or Rectangular ratio
                     rt.addValue("*AspRatio", ferets[i]/breadths[i]);
-                if (doCirc)
+                if (doCirc) //Circularity = 4·?·Area/Perim2  also called Formfactor or Shapefactor
                     rt.addValue("*Circ", 4 * areas[i] / (perims[i] * perims[i]));
-                if (doRoundness)
+                if (doRoundness) //Roundness = 4·Area/(?·Feret2)
                     rt.addValue("*Roundness", (areas[i] * 4) / ((pigreco) * (ferets[i] * ferets[i])));
-                if(doArEquivD)
+                if(doArEquivD) //Diameter of a circle with equivalent area,
                     rt.addValue("*ArEquivD", Math.sqrt((4 * pigreco) * areas[i]));
-                if(doPerEquivD)
+                if(doPerEquivD) //Diameter of a circle with equivalent perimeter,  Area/?
                     rt.addValue("*PerEquivD", areas[i]/pigreco);
-                if(doEquivEllAr)
+                if(doEquivEllAr) //Area of the ellipse with Feret and Breath as major and minor axis,  = (?·Feret·Breadth)/4
                     rt.addValue("*EquivEllAr", (pigreco*ferets[i]*breadths[i])/4);
-                if(doCompactness)
+                if(doCompactness) //Compactness = ?((4/?)·Area)/Feret
                     rt.addValue("*Compactness", (Math.sqrt((4 * pigreco) * areas[i]))/ferets[i]);
-                if(doConvexity)
+                if(doConvexity) //Convexity = Convex_Perim/Perimeter also called rugosity or roughness
                     rt.addValue("*Convexity", convexPerimeter/perims[i]);
-                if(doShape)
+                if(doShape) //Shape = Perimeter2/Area also called Thinness ratio
                     rt.addValue("*Shape", (perims[i]*perims[i])/areas[i]);
-                if(doRFactor)
+                if(doRFactor) //RFactor = Convex_Area /(Feret·?)
                     rt.addValue("*RFactor", convexArea/(ferets[i]*pigreco));
-                if(doArBBox)
+                if(doArBBox) //Area of the bounding box along the Feret diameter = Feret·Breadth
                     rt.addValue("*ArBBox", ferets[i]*breadths[i]);
-                if(doRectang)
+                if(doRectang) //Rectangularity = Area/ArBBox also called Extent
                     rt.addValue("*Rectang", areas[i]/(ferets[i]*breadths[i]));
-                if(doHaralickRatio)
-                   // rt.addValue("*Haralick ratio", meanRadius[i]/standardDeviationOfRadii[i]);
-                if(doElongation)
+                if(doModRatio) //Modification ratio = (2·MinR)/Feret
+                    rt.addValue("*ModRatio", (breadths[i]/ferets[i])); //2 * MinR / Feret DA RIVEDERE dannorisultati uguali
+                if(doSphericity) //Sphericity = MinR/MaxR also called Radius ratio
+                    rt.addValue("*Sphericity", (breadths[i]/2)/(ferets[i]/2)); //MinR / MaxR DA RIVEDERE danno risultati ugualu
+                if(doElongation) //The inverse of the circularity,  Perim2/(4·?·Area)
                     rt.addValue("*Elongation", (perims[i]*perims[i])/(4*pigreco*areas[i]));
+                if(doNormPeriIndex)
+                    rt.addValue("*normPeriIndex", (2*Math.sqrt(pigreco*areas[i]))/perims[i]);
+                /*Quinn 2014 da Review di Rosado
+                normPeriIndex = (2*sqrt(pi*Area))/Perim
+                The normalized perimeter index compares the input perimeter to the most compact polygon
+                with the same area (equal area circle), meaning you can use it to identify features with irregular
+                boundaries.
+                The normalized perimeter index uses the equal area circle to normalize the metric.
+                */
 
             }
+            /*float[] meanRadius= rt.getColumn(ResultsTable.MEAN);
+            float[] standardDeviationOfRadii= rt.getColumn(ResultsTable.STD_DEV);
+            if(doHaralickRatio) DA FARE SU PIù OGGE
+                // rt.addValue("*Haralick ratio", meanRadius[i]/standardDeviationOfRadii[i]); //da rivedere
+                */
 
-            Analyzer.setMeasurements(old_measures);
+            Analyzer.setMeasurements(old_measures); //per risettare misure vecchie
         }
     }
 }
