@@ -28,11 +28,12 @@ public class Catch_Parasite_Binary_ implements PlugIn {
 
     boolean doMINRMAXR;
     boolean doAspRatio;
-    boolean doCirc;
+    boolean doCircularity;
     boolean doRoundness;
     boolean doArEquivD;
     boolean doPerEquivD;
     boolean doEquivEllAr;
+    boolean doConcavity;
     boolean doCompactness;
     boolean doConvexity;
     boolean doShape;
@@ -129,6 +130,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addCheckbox("PerEquivD", false);
             gd.addCheckbox("EquivEllAr", false);
             gd.addCheckbox("Compactness", false);
+            gd.addCheckbox("Concavity", false);
             gd.addCheckbox("Convexity", false);
             gd.addCheckbox("Shape", false);
             gd.addCheckbox("RFactor", false);
@@ -148,11 +150,12 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doConvexPerimeter = true;
                 doMINRMAXR = true;
                 doAspRatio = true;
-                doCirc = true;
+                doCircularity = true;
                 doRoundness = true;
                 doArEquivD = true;
                 doPerEquivD = true;
                 doEquivEllAr = true;
+                doConcavity = true;
                 doCompactness = true;
                 doConvexity = true;
                 doShape = true;
@@ -169,7 +172,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doConvexPerimeter = gd.getNextBoolean();
                 doMINRMAXR = gd.getNextBoolean();
                 doAspRatio = gd.getNextBoolean();
-                doCirc = gd.getNextBoolean();
+                doCircularity = gd.getNextBoolean();
                 doRoundness = gd.getNextBoolean();
                 doArEquivD = gd.getNextBoolean();
                 doPerEquivD = gd.getNextBoolean();
@@ -280,8 +283,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 }
                 if(doAspRatio) //Aspect ratio = Feret/Breadth = L/W also called Feret ratio or Eccentricity or Rectangular ratio
                     rt.addValue("*AspRatio", ferets[i]/breadths[i]);
-                if (doCirc) //Circularity = 4·?·Area/Perim2  also called Formfactor or Shapefactor
-                    rt.addValue("*Circ", 4 * areas[i] / (perims[i] * perims[i]));
+                if (doCircularity) //Circularity = 4·?·Area/Perim2  also called Formfactor or Shapefactor
+                    rt.addValue("*Circularity", 4 * areas[i] / (perims[i] * perims[i]));
                 if (doRoundness) //Roundness = 4·Area/(?·Feret2)
                     rt.addValue("*Roundness", (areas[i] * 4) / ((pigreco) * (ferets[i] * ferets[i])));
                 if(doArEquivD) //Diameter of a circle with equivalent area,
@@ -292,6 +295,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                     rt.addValue("*EquivEllAr", (pigreco*ferets[i]*breadths[i])/4);
                 if(doCompactness) //Compactness = ?((4/?)·Area)/Feret
                     rt.addValue("*Compactness", (Math.sqrt((4 * pigreco) * areas[i]))/ferets[i]);
+                if(doConcavity) //Concavity ConvexArea-Area
+                    rt.addValue("*Concavity", convexArea-areas[i]);
                 if(doConvexity) //Convexity = Convex_Perim/Perimeter also called rugosity or roughness
                     rt.addValue("*Convexity", convexPerimeter/perims[i]);
                 if(doShape) //Shape = Perimeter2/Area also called Thinness ratio
