@@ -10,6 +10,8 @@ import ij.plugin.frame.ThresholdAdjuster;
 import ij.plugin.ChannelSplitter;
 import ij.plugin.Thresholder;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /*Catch_Parasite by Tatalessap
  * Catch_Parasite è una classe volta alla misurazione di elementi all'interno di una immagine binaria.
@@ -42,7 +44,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
     boolean doElongation;
     /*Sezione 2*/
     boolean doNormPeriIndex;
-    boolean doMeanRadius;
+    boolean doHeralickRatio;
 
     /*piGreco necessario per alcuni calcoli*/
     double pigreco= 3.1415926535;
@@ -116,9 +118,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addStringField("Title: ", "Catch parasite");
             gd.addMessage("Choise measures");
             gd.addMessage("The measures area, perim, feret, feret min are necessary for the PlugIn");
-
             gd.addCheckbox("SelectAll", true); //tutte le misure
-
             gd.addCheckbox("Convex Area", false);
             gd.addCheckbox("Convex Perimeter", false);
             gd.addCheckbox("MinR and MaxR", false);
@@ -138,7 +138,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addCheckbox("Sphericity", false);
             gd.addCheckbox("Elongation", false);
             gd.addCheckbox("NormPeriIndex", false);
-            gd.addCheckbox("Mean Radius", false);
+            gd.addCheckbox("HeralickRatio", false);
             gd.showDialog(); //show
             if (gd.wasCanceled())
                 return false;
@@ -163,7 +163,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doSphericity = true;
                 doElongation = true;
                 doNormPeriIndex = true;
-                doMeanRadius = true;
+                doHeralickRatio = true;
             } else { //altrimenti pescati uno per uno con un certo ordine
                 doConvexArea = gd.getNextBoolean();
                 doConvexPerimeter = gd.getNextBoolean();
@@ -184,7 +184,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doSphericity = gd.getNextBoolean();
                 doElongation = gd.getNextBoolean();
                 doNormPeriIndex = gd.getNextBoolean();
-                doMeanRadius = gd.getNextBoolean();
+                doHeralickRatio = gd.getNextBoolean();
             }
             return true;
         }
@@ -225,35 +225,32 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             return Math.sqrt((argx1-argx2)*(argx1-argx2)+(argy1-argy2)*(argy1-argy2));
         }
 
-        /*double average (double[] vet){
-            double sum=0.0;
-            int i=0;
-            for(i=0; i<vet.length-1;i++){
-                sum+=vet[i];
-            }
-            return sum/i;
-        }*/
-
-        double getMeanRadius(Polygon p){
-            int yMoment=0;
+        double getHeralickRatio(Polygon p){
+            /*Essendo disordinati bisogna scorrere gli array delle x e delle y*/
             double sumMean=0.0;
-            //double[] radii=null;
+            double[] radii = new double[p.npoints];
             int xFirst=0;
             int xSecond=0;
-            int z=0;
+            int numberOfRadius=0;
             for(int i=0; i<p.npoints-1; i++){
-                yMoment=p.ypoints[i];
                 xFirst=p.xpoints[i];
                 for(int j=i+1; j<p.npoints-1; j++){
-                    if(p.ypoints[j]==yMoment){
-                        xSecond=p.xpoints[j];
-                        sumMean+=xSecond-xFirst;
-                        z++;
+                    if(p.ypoints[j]==p.ypoints[i]){
+                        if(xFirst<p.xpoints[j]){
+                            xSecond=p.xpoints[j];
+                        }
                     }
                 }
+                sumMean+=(xSecond-xFirst)/2;
+                radii[numberOfRadius]=(xSecond-xFirst)/2;
+                numberOfRadius++;
             }
 
-            return (double)sumMean/z;
+            double media= sumMean/numberOfRadius;
+            for(int i=0; i<numberOfRadius; i++){
+                sumMean+=Math.abs((radii[i]-media)*(radii[i]-media));
+            }
+            return media/(Math.sqrt(Math.abs(sumMean/numberOfRadius-1)));
         }
 
         /*Metodo addMeasure necessario per il calcolo delle misure aggiuntive a cui vengono passati i valori già trattati nella classe estesa (ParticleAnalyzer)*/
@@ -268,7 +265,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             //Riguardante ConvexHull: trattamento di un oggetto Polygon (Riguardante la ROI data)
             double convexArea = getArea(roi.getConvexHull());
             double convexPerimeter = getPerimeter(roi.getConvexHull());
-            double meanRadius = getMeanRadius(roi.getConvexHull());
+            double heralickRatio = getHeralickRatio(roi.getConvexHull());
             //ciclo per l'aggiunta dei nuovi valori
             for (int i = 0; i < areas.length; i++) {
                 // double [] minR_maxR = getMinRMaxR(stats.xCenterOfMass, stats.yCenterOfMass);
@@ -313,8 +310,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                     rt.addValue("*Elongation", (perims[i]*perims[i])/(4*pigreco*areas[i]));
                 if(doNormPeriIndex)
                     rt.addValue("*normPeriIndex", (2*Math.sqrt(pigreco*areas[i]))/perims[i]);
-                if(doMeanRadius){
-                    rt.addValue("*Mean Radius", meanRadius);
+                if(doHeralickRatio){
+                    rt.addValue("*HeralickRatio", heralickRatio);
                 }
                 /*Quinn 2014 da Review di Rosado
                 normPeriIndex = (2*sqrt(pi*Area))/Perim
