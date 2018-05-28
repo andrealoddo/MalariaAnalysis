@@ -90,7 +90,10 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                         -INVERT_Y
                         -INTEGRATED_DENSITY
                 ;
-        /**/
+        /*showDialog:
+        * settaggio della opzione per visualizzare contorni e etichetta numerata
+        * settaggio nelle misure necessarie
+        * richiamo della genericDialog creata per poter settare le misure da aggiungere*/
         @Override
         public boolean showDialog(){
             boolean flag = super.showDialog();
@@ -98,10 +101,17 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             //                             OVERLAY_OUTLINES=6, OVERLAY_MASKS=7;*//
             //setto solo quello che mi serve
             Analyzer.setMeasurements(necessary_measures);
-            return genericDialog();
+            if(flag) return genericDialog();
+            return false;
+
         }
 
-        /**/
+        /*saveResults:
+        * richiamo della funzione originaria
+        * richiamo della funzione aggiuntiva addMeasure a cui vengono passati roi e stats.
+        * roi: regione di interesse
+        * stats: oggetto di tipo ImageStatistics
+        * settaggio delle vecchie misure dopo che si è concluso il calcolo*/
         @Override
         protected void saveResults(ImageStatistics stats, Roi roi) {
             //ThresholdAdjuster th = new ThresholdAdjuster();
@@ -209,7 +219,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         }
 
         /*Riguardante ConvexHull-
-         * Calcolo del perimetro dato i punti del poligono e calcolando le distanze trai punti*/
+         * Calcolo del perimetro dato i punti del poligono e calcolando le distanze tra i punti*/
         final double getPerimeter (Polygon p){
             if(p==null) return  Double.NaN;
 
@@ -224,28 +234,32 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             return cperimeter;
         }
 
+        /*Funzione di appoggio per il caolcolo della distanza*/
         double distance(int argx1, int argy1, int argx2, int argy2){
             return Math.sqrt((argx1-argx2)*(argx1-argx2)+(argy1-argy2)*(argy1-argy2));
         }
 
+        /*Riguardante il calcolo del Haralick Ratio
+        * Sfruttando la trasformazione in convexHull del roi, si prendono i punti delle coordinate x e y e si lavorano su essi:
+        * ovunque la y abbia un valore uguale si considera la x
+        * purtroppo essi sono disordinati*/
         double getHeralickRatio(Polygon p){
             /*Essendo disordinati bisogna scorrere gli array delle x e delle y*/
             double sumMean=0.0;
+            /*raccoglierà tutti i raggi*/
             double[] radii = new double[p.npoints];
-            int xFirst=0;
             int xSecond=0;
             int numberOfRadius=0;
             for(int i=0; i<p.npoints-1; i++){
-                xFirst=p.xpoints[i];
                 for(int j=i+1; j<p.npoints-1; j++){
                     if(p.ypoints[j]==p.ypoints[i]){
-                        if(xFirst<p.xpoints[j]){
+                        if(p.xpoints[i]<p.xpoints[j]){
                             xSecond=p.xpoints[j];
                         }
                     }
                 }
-                sumMean+=(xSecond-xFirst)/2;
-                radii[numberOfRadius]=(xSecond-xFirst)/2;
+                sumMean+=(xSecond-p.xpoints[i])/2;
+                radii[numberOfRadius]=(xSecond-p.xpoints[i])/2;
                 numberOfRadius++;
             }
 
