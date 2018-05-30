@@ -35,6 +35,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
     boolean doEquivEllAr;
     boolean doConcavity;
     boolean doCompactness;
+    boolean doSolidity;
     boolean doConvexity;
     boolean doShape;
     boolean doRFactor;
@@ -45,7 +46,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
     boolean doElongation;
     /*Sezione 2*/
     boolean doNormPeriIndex;
-    boolean doHeralickRatio;
+    boolean doHaralickRatio;
 
     /*piGreco necessario per alcuni calcoli*/
     double pigreco= 3.1415926535;
@@ -82,13 +83,13 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         int old_measures = Analyzer.getMeasurements();
         //Salvataggio delle nuove misure necessarie per il calcolo delle nuove
         int necessary_measures =
-                ALL_STATS+SHAPE_DESCRIPTORS
+                ALL_STATS
+                        +SHAPE_DESCRIPTORS
                         -SKEWNESS
                         -STD_DEV
                         -KURTOSIS
                         -NaN_EMPTY_CELLS
                         -INVERT_Y
-                        -INTEGRATED_DENSITY
                 ;
         /*showDialog:
         * settaggio della opzione per visualizzare contorni e etichetta numerata
@@ -96,8 +97,9 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         * richiamo della genericDialog creata per poter settare le misure da aggiungere*/
         @Override
         public boolean showDialog(){
+            super.staticShowChoice = 1;
             boolean flag = super.showDialog();
-            super.staticShowChoice = 1; //*protected static final int NOTHING=0, OUTLINES=1, BARE_OUTLINES=2, ELLIPSES=3, MASKS=4, ROI_MASKS=5,
+             //*protected static final int NOTHING=0, OUTLINES=1, BARE_OUTLINES=2, ELLIPSES=3, MASKS=4, ROI_MASKS=5,
             //                             OVERLAY_OUTLINES=6, OVERLAY_MASKS=7;*//
             //setto solo quello che mi serve
             Analyzer.setMeasurements(necessary_measures);
@@ -140,6 +142,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addCheckbox("PerEquivD", false);
             gd.addCheckbox("EquivEllAr", false);
             gd.addCheckbox("Compactness", false);
+            gd.addCheckbox("Solidity", false);
             gd.addCheckbox("Concavity", false);
             gd.addCheckbox("Convexity", false);
             gd.addCheckbox("Shape", false);
@@ -150,7 +153,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addCheckbox("Sphericity", false);
             gd.addCheckbox("Elongation", false);
             gd.addCheckbox("NormPeriIndex", false);
-            gd.addCheckbox("HeralickRatio", false);
+            gd.addCheckbox("HaralickRatio", false);
             gd.showDialog(); //show
             if (gd.wasCanceled())
                 return false;
@@ -167,6 +170,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doEquivEllAr = true;
                 doConcavity = true;
                 doCompactness = true;
+                doSolidity=true;
                 doConvexity = true;
                 doShape = true;
                 doRFactor = true;
@@ -176,7 +180,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doSphericity = true;
                 doElongation = true;
                 doNormPeriIndex = true;
-                doHeralickRatio = true;
+                doHaralickRatio = true;
             } else { //altrimenti pescati uno per uno con un certo ordine
                 doConvexArea = gd.getNextBoolean();
                 doConvexPerimeter = gd.getNextBoolean();
@@ -188,6 +192,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doPerEquivD = gd.getNextBoolean();
                 doEquivEllAr = gd.getNextBoolean();
                 doCompactness = gd.getNextBoolean();
+                doSolidity=gd.getNextBoolean();;
                 doConvexity = gd.getNextBoolean();
                 doShape = gd.getNextBoolean();
                 doRFactor = gd.getNextBoolean();
@@ -197,7 +202,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doSphericity = gd.getNextBoolean();
                 doElongation = gd.getNextBoolean();
                 doNormPeriIndex = gd.getNextBoolean();
-                doHeralickRatio = gd.getNextBoolean();
+                doHaralickRatio = gd.getNextBoolean();
             }
             return true;
         }
@@ -298,7 +303,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 if(doAspRatio) //Aspect ratio = Feret/Breadth = L/W also called Feret ratio or Eccentricity or Rectangular ratio
                     rt.addValue("*AspRatio", ferets[i]/breadths[i]);
                 if (doCircularity) //Circularity = 4·?·Area/Perim2  also called Formfactor or Shapefactor
-                    rt.addValue("*Circularity", 4 * areas[i] / (perims[i] * perims[i]));
+                    rt.addValue("*Circularity", 4 * pigreco* areas[i] / (perims[i] * perims[i]));
                 if (doRoundness) //Roundness = 4·Area/(?·Feret2)
                     rt.addValue("*Roundness", (areas[i] * 4) / ((pigreco) * (ferets[i] * ferets[i])));
                 if(doArEquivD) //Diameter of a circle with equivalent area,
@@ -308,7 +313,9 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 if(doEquivEllAr) //Area of the ellipse with Feret and Breath as major and minor axis,  = (?·Feret·Breadth)/4
                     rt.addValue("*EquivEllAr", (pigreco*ferets[i]*breadths[i])/4);
                 if(doCompactness) //Compactness = ?((4/?)·Area)/Feret
-                    rt.addValue("*Compactness", (Math.sqrt((4 * pigreco) * areas[i]))/ferets[i]);
+                    rt.addValue("*Compactness", (Math.sqrt((4 / pigreco) * areas[i]))/ferets[i]);
+                if(doSolidity) //Compactness = ?((4/?)·Area)/Feret
+                    rt.addValue("*Solidity", (areas[i]/convexArea));
                 if(doConcavity) //Concavity ConvexArea-Area
                     rt.addValue("*Concavity", convexArea-areas[i]);
                 if(doConvexity) //Convexity = Convex_Perim/Perimeter also called rugosity or roughness
@@ -329,8 +336,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                     rt.addValue("*Elongation", (perims[i]*perims[i])/(4*pigreco*areas[i]));
                 if(doNormPeriIndex)
                     rt.addValue("*normPeriIndex", (2*Math.sqrt(pigreco*areas[i]))/perims[i]);
-                if(doHeralickRatio){
-                    rt.addValue("*HeralickRatio", heralickRatio);
+                if(doHaralickRatio){
+                    rt.addValue("*HaralickRatio", heralickRatio);
                 }
                 /*Quinn 2014 da Review di Rosado
                 normPeriIndex = (2*sqrt(pi*Area))/Perim
