@@ -12,6 +12,9 @@ import ij.plugin.Thresholder;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.awt.Polygon;
+import java.lang.Object;
+import java.util.Arrays;
 
 /*Catch_Parasite by Tatalessap
  * Catch_Parasite è una classe volta alla misurazione di elementi all'interno di una immagine binaria.
@@ -47,9 +50,10 @@ public class Catch_Parasite_Binary_ implements PlugIn {
     /*Sezione 2*/
     boolean doNormPeriIndex;
     boolean doHaralickRatio;
+    boolean doBendingEnergy;
 
     /*piGreco necessario per alcuni calcoli*/
-    double pigreco= 3.1415926535;
+    double pigreco= Math.PI;
 
     /*Metodo run necessaria per i PlugIn
      * Memorizza l'immagine in ingresso
@@ -92,14 +96,14 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                         -INVERT_Y
                 ;
         /*showDialog:
-        * settaggio della opzione per visualizzare contorni e etichetta numerata
-        * settaggio nelle misure necessarie
-        * richiamo della genericDialog creata per poter settare le misure da aggiungere*/
+         * settaggio della opzione per visualizzare contorni e etichetta numerata
+         * settaggio nelle misure necessarie
+         * richiamo della genericDialog creata per poter settare le misure da aggiungere*/
         @Override
         public boolean showDialog(){
             super.staticShowChoice = 1;
             boolean flag = super.showDialog();
-             //*protected static final int NOTHING=0, OUTLINES=1, BARE_OUTLINES=2, ELLIPSES=3, MASKS=4, ROI_MASKS=5,
+            //*protected static final int NOTHING=0, OUTLINES=1, BARE_OUTLINES=2, ELLIPSES=3, MASKS=4, ROI_MASKS=5,
             //                             OVERLAY_OUTLINES=6, OVERLAY_MASKS=7;*//
             //setto solo quello che mi serve
             Analyzer.setMeasurements(necessary_measures);
@@ -109,11 +113,11 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         }
 
         /*saveResults:
-        * richiamo della funzione originaria
-        * richiamo della funzione aggiuntiva addMeasure a cui vengono passati roi e stats.
-        * roi: regione di interesse
-        * stats: oggetto di tipo ImageStatistics
-        * settaggio delle vecchie misure dopo che si è concluso il calcolo*/
+         * richiamo della funzione originaria
+         * richiamo della funzione aggiuntiva addMeasure a cui vengono passati roi e stats.
+         * roi: regione di interesse
+         * stats: oggetto di tipo ImageStatistics
+         * settaggio delle vecchie misure dopo che si è concluso il calcolo*/
         @Override
         protected void saveResults(ImageStatistics stats, Roi roi) {
             //ThresholdAdjuster th = new ThresholdAdjuster();
@@ -126,7 +130,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         /*Metodo della creazione della finestra di dialogo, visualizzazione del:
          * - checkbox per selezionare ogni misura
          * - checkbox per selezionare misure singole*/
-        public boolean genericDialog() {
+        protected boolean genericDialog() {
             GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
             gd.addStringField("Title: ", "Catch parasite");
             gd.addMessage("Choise measures");
@@ -154,6 +158,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addCheckbox("Elongation", false);
             gd.addCheckbox("NormPeriIndex", false);
             gd.addCheckbox("HaralickRatio", false);
+            gd.addCheckbox("Bending Energy", false);
             gd.showDialog(); //show
             if (gd.wasCanceled())
                 return false;
@@ -181,6 +186,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doElongation = true;
                 doNormPeriIndex = true;
                 doHaralickRatio = true;
+                doBendingEnergy = true;
             } else { //altrimenti pescati uno per uno con un certo ordine
                 doConvexArea = gd.getNextBoolean();
                 doConvexPerimeter = gd.getNextBoolean();
@@ -203,6 +209,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doElongation = gd.getNextBoolean();
                 doNormPeriIndex = gd.getNextBoolean();
                 doHaralickRatio = gd.getNextBoolean();
+                doBendingEnergy=gd.getNextBoolean();
             }
             return true;
         }
@@ -210,7 +217,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         /*Riguardante ConvexHull-
          * Rivisitazione del metodo getArea da Analyzer(super-super classe) per cui dati i punti del poligono calcola l'area
          * trattandolo come se fosse composto da danti piccoli triangoli*/
-        final double getArea(Polygon p) {
+        protected double getArea(Polygon p) {
             if (p==null) return Double.NaN;
             int carea = 0;
             int iminus1;
@@ -225,7 +232,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
 
         /*Riguardante ConvexHull-
          * Calcolo del perimetro dato i punti del poligono e calcolando le distanze tra i punti*/
-        final double getPerimeter (Polygon p){
+        protected final double getPerimeter (Polygon p){
             if(p==null) return  Double.NaN;
 
             double cperimeter = 0.0;
@@ -240,15 +247,124 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         }
 
         /*Funzione di appoggio per il caolcolo della distanza*/
-        double distance(int argx1, int argy1, int argx2, int argy2){
+        public double distance(int argx1, int argy1, int argx2, int argy2){
             return Math.sqrt((argx1-argx2)*(argx1-argx2)+(argy1-argy2)*(argy1-argy2));
         }
 
+        /*METODI PER I VETTORI*/
+
+        public double[] diff (double[] z){
+            double first= z[0];
+            double ultimade = z[z.length-1];
+            double[] result = new double[z.length];
+
+            for(int i=0; i<z.length; i++){
+                if (i==(z.length-1))
+                {
+                    result[i]=Math.abs(ultimade-first);
+                }
+                else
+                {
+                    result[i]=Math.abs(z[i+1]-z[i]);
+                }
+            }
+            return result;
+        }
+
+        public double[] diffVector(double[] a, double[] b){
+            double[] result = new double[a.length];
+            for(int i=0;i<a.length;i++){
+                result[i]=Math.abs(a[i]-b[i]);
+            }
+
+            return result;
+        }
+
+        public double[] moltVector(double[] a, double[] b){ //ok
+            double[] result = new double[a.length];
+            for(int i=0;i<a.length;i++){
+                result[i]=a[i]*b[i];
+            }
+
+            return result;
+        }
+
+        public double[] divVector(double[] a, double[] b){
+            double[] result = new double[a.length];
+            for(int i=0;i<a.length;i++){
+                result[i]=Math.abs(a[i]*Math.pow(b[i], -1));
+            }
+            return result;
+        }
+
+        public double [] sumVector(double[] a, double[] b){
+            double[] result = new double[a.length];
+            for(int i=0;i<a.length;i++){
+                result[i]=Math.abs(a[i]+b[i]);
+            }
+            return result;
+        }
+
+        public double[] elevationVector(double [] a, double elevation) {
+            double[] result = new double[a.length];
+            for(int i=0;i<a.length;i++){
+                result[i]= Math.pow(a[i], elevation);
+            }
+            return result;
+        }
+
+        private double getBendingEnergy(Polygon polygon){
+            //SBAGLIATO DA RICONTROLLARE
+            double bendingEnergy=0;
+            double[] k = new double[polygon.npoints];
+            int i;
+
+            /*Trasformazione in double dei vettori x e y..
+            * */
+            double[] x = new double[polygon.npoints];
+            for(i=0;i<x.length;i++) {
+                x[i] = (double) polygon.xpoints[i];
+            }
+
+            double [] y = new double[polygon.npoints];
+            for(i=0;i<y.length;i++) {
+                y[i] = (double) polygon.ypoints[i];
+            }
+
+            k= divVector(
+                    diffVector
+                            (
+                                    moltVector(
+                                            (diff(x)),(diff(diff(y)))
+                                    )
+                                    ,
+                                    moltVector(
+                                            (diff(y)),(diff(diff(x)))
+                                    )
+                            )
+                    ,
+                    elevationVector (
+                            (sumVector (
+                                    elevationVector(diff(x),2),
+                                    elevationVector(diff(y), 2))),
+                            1.5
+                    )
+
+            );
+
+
+            for(i=0; i<k.length; i++){
+                bendingEnergy=bendingEnergy+Math.pow(k[i], 2);
+            }
+
+            return bendingEnergy*Math.pow(k.length, -1);
+        }
+
         /*Riguardante il calcolo del Haralick Ratio
-        * Sfruttando la trasformazione in convexHull del roi, si prendono i punti delle coordinate x e y e si lavorano su essi:
-        * ovunque la y abbia un valore uguale si considera la x
-        * purtroppo essi sono disordinati*/
-        double getHeralickRatio(Polygon p){
+         * Sfruttando la trasformazione in convexHull del roi, si prendono i punti delle coordinate x e y e si lavorano su essi:
+         * ovunque la y abbia un valore uguale si considera la x
+         * purtroppo essi sono disordinati*/
+        protected double getHeralickRatio(Polygon p){
             /*Essendo disordinati bisogna scorrere gli array delle x e delle y*/
             double sumMean=0.0;
             /*raccoglierà tutti i raggi*/
@@ -276,7 +392,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         }
 
         /*Metodo addMeasure necessario per il calcolo delle misure aggiuntive a cui vengono passati i valori già trattati nella classe estesa (ParticleAnalyzer)*/
-        void addMeasure(ImageStatistics stats, Roi roi, ResultsTable rt, ImagePlus imp){
+        protected void addMeasure(ImageStatistics stats, Roi roi, ResultsTable rt, ImagePlus imp){
             ImageProcessor ip = imp.getProcessor();
             ip.autoThreshold();
             ip.setRoi(roi); //settaggio della zona di interesse
@@ -288,6 +404,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             double convexArea = getArea(roi.getConvexHull());
             double convexPerimeter = getPerimeter(roi.getConvexHull());
             double heralickRatio = getHeralickRatio(roi.getConvexHull());
+            double be = getBendingEnergy(roi.getConvexHull());
             //ciclo per l'aggiunta dei nuovi valori
             for (int i = 0; i < areas.length; i++) {
                 // double [] minR_maxR = getMinRMaxR(stats.xCenterOfMass, stats.yCenterOfMass);
@@ -339,19 +456,39 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 if(doHaralickRatio){
                     rt.addValue("*HaralickRatio", heralickRatio);
                 }
-                /*Quinn 2014 da Review di Rosado
-                normPeriIndex = (2*sqrt(pi*Area))/Perim
-                The normalized perimeter index compares the input perimeter to the most compact polygon
-                with the same area (equal area circle), meaning you can use it to identify features with irregular
-                boundaries.
-                The normalized perimeter index uses the equal area circle to normalize the metric.
+                if(doBendingEnergy) {
+                    rt.addValue("*Bending Energy", be);
+                }
+
+                /*
+                Polygon polygon=roi.getConvexHull();
+
+                double[] x = new double[polygon.npoints];
+                for(int a =0;a<x.length;a++) {
+                    x[a] = (double) polygon.xpoints[a];
+                }
+
+                double [] y = new double[polygon.npoints];
+                for(int c=0;c<y.length;c++) {
+                    y[c] = (double) polygon.ypoints[c];
+                }
+
+                double [] diffX1= diff(x);
+                double [] diffX2= diff(diffX1);
+                double [] diffY1= diff(y);
+                double [] diffY2= diff(diffY1);
+
+                for(int b=0; b<polygon.npoints; b++){
+                    rt.addValue("**X    "+b, x[b]);
+                    rt.addValue("**XDIFF1   "+b, diffX1[b]);
+                    rt.addValue("**XDIFF2   "+b, diffX2[b]);
+                    rt.addValue("**Y    "+b, y[b]);
+                    rt.addValue("**YDIFF1   "+b, diffY1[b]);
+                    rt.addValue("**YDIFF2   "+b, diffY2[b]);
+                };
+
                 */
             }
-            /*float[] meanRadius= rt.getColumn(ResultsTable.MEAN);
-            float[] standardDeviationOfRadii= rt.getColumn(ResultsTable.STD_DEV);
-            if(doHaralickRatio) DA FARE SU PIù OGGE
-                // rt.addValue("*Haralick ratio", meanRadius[i]/standardDeviationOfRadii[i]); //da rivedere
-                */
         }
     }
 }
