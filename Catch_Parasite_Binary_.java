@@ -23,38 +23,6 @@ import java.util.Arrays;
  * aggiungendo misure non presenti.*/
 
 public class Catch_Parasite_Binary_ implements PlugIn {
-    /*Variabili booleani corrispondenti alle misure implementate e aggiunte.*/
-    /*Sezione 1*/
-    /*ConvexHull*/
-    boolean doConvexArea;
-    boolean doConvexPerimeter;
-
-    boolean doMINRMAXR;
-    boolean doAspRatio;
-    boolean doCircularity;
-    boolean doRoundness;
-    boolean doArEquivD;
-    boolean doPerEquivD;
-    boolean doEquivEllAr;
-    boolean doConcavity;
-    boolean doCompactness;
-    boolean doSolidity;
-    boolean doConvexity;
-    boolean doShape;
-    boolean doRFactor;
-    boolean doArBBox;
-    boolean doRectang;
-    boolean doModRatio;
-    boolean doSphericity;
-    boolean doElongation;
-    /*Sezione 2*/
-    boolean doNormPeriIndex;
-    boolean doHaralickRatio;
-    boolean doBendingEnergy;
-
-    /*piGreco necessario per alcuni calcoli*/
-    double pigreco= Math.PI;
-
     /*Metodo run necessaria per i PlugIn
      * Memorizza l'immagine in ingresso
      * richiama il metodo catch_parasite_running dandogli in ingresso l'immagine*/
@@ -83,6 +51,35 @@ public class Catch_Parasite_Binary_ implements PlugIn {
     /*Inner class Parasite che estende la classe ParticleAnalyzer
      * Al suo interno, attraverso gli Override, si estendono i meotdi già presenti nella classe ParticleAnalyzer*/
     class Parasite extends ParticleAnalyzer {
+        /*Variabili booleani corrispondenti alle misure implementate e aggiunte.*/
+        /*Sezione 1*/
+        /*ConvexHull*/
+        boolean doConvexArea;
+        boolean doConvexPerimeter;
+        boolean doMINRMAXR;
+        boolean doAspRatio;
+        boolean doCircularity;
+        boolean doRoundness;
+        boolean doArEquivD;
+        boolean doPerEquivD;
+        boolean doEquivEllAr;
+        boolean doConcavity;
+        boolean doCompactness;
+        boolean doSolidity;
+        boolean doConvexity;
+        boolean doShape;
+        boolean doRFactor;
+        boolean doArBBox;
+        boolean doRectang;
+        boolean doModRatio;
+        boolean doSphericity;
+        boolean doElongation;
+        /*Sezione 2*/
+        boolean doNormPeriIndex;
+        boolean doHaralickRatio;
+        boolean doBendingEnergy;
+        /*piGreco necessario per alcuni calcoli*/
+        double pigreco= Math.PI;
         //Salvataggio delle misure già settate in SetMeasurements
         int old_measures = Analyzer.getMeasurements();
         //Salvataggio delle nuove misure necessarie per il calcolo delle nuove
@@ -133,32 +130,63 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         protected boolean genericDialog() {
             GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
             gd.addStringField("Title: ", "Catch parasite");
-            gd.addMessage("Choise measures");
-            gd.addMessage("The measures area, perim, feret, feret min are necessary for the PlugIn");
+            gd.addMessage("Choise measures for B&W");
+
             gd.addCheckbox("SelectAll", true); //tutte le misure
+
             gd.addCheckbox("Convex Area", false);
+            gd.addToSameRow();
             gd.addCheckbox("Convex Perimeter", false);
+            gd.addToSameRow();
             gd.addCheckbox("MinR and MaxR", false);
+
             gd.addCheckbox("AspRatio", false);
+            gd.addToSameRow();
             gd.addCheckbox("Circ", false);
+            gd.addToSameRow();
             gd.addCheckbox("Roundness", false);
+
             gd.addCheckbox("ArEquivD", false);
+            gd.addToSameRow();
             gd.addCheckbox("PerEquivD", false);
+            gd.addToSameRow();
             gd.addCheckbox("EquivEllAr", false);
+
             gd.addCheckbox("Compactness", false);
+            gd.addToSameRow();
             gd.addCheckbox("Solidity", false);
+            gd.addToSameRow();
             gd.addCheckbox("Concavity", false);
+
+
             gd.addCheckbox("Convexity", false);
+            gd.addToSameRow();
             gd.addCheckbox("Shape", false);
+            gd.addToSameRow();
             gd.addCheckbox("RFactor", false);
+
+
             gd.addCheckbox("ArBBox", false);
+            gd.addToSameRow();
             gd.addCheckbox("Rectang", false);
+            gd.addToSameRow();
             gd.addCheckbox("ModRatio", false);
+
+
             gd.addCheckbox("Sphericity", false);
+            gd.addToSameRow();
             gd.addCheckbox("Elongation", false);
+            gd.addToSameRow();
             gd.addCheckbox("NormPeriIndex", false);
+
+
             gd.addCheckbox("HaralickRatio", false);
+            gd.addToSameRow();
             gd.addCheckbox("Bending Energy", false);
+
+            gd.addMessage("Choise measures for grey");
+            gd.addCheckbox("SelectAll", true); //tutte le misure
+
             gd.showDialog(); //show
             if (gd.wasCanceled())
                 return false;
@@ -211,6 +239,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doHaralickRatio = gd.getNextBoolean();
                 doBendingEnergy=gd.getNextBoolean();
             }
+
             return true;
         }
 
@@ -261,11 +290,13 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             for(int i=0; i<z.length; i++){
                 if (i==(z.length-1))
                 {
-                    result[i]=Math.abs(ultimade-first);
+                    result[i]=(ultimade-first);
+                    //result[i]=Math.abs(ultimade-first);
                 }
                 else
                 {
-                    result[i]=Math.abs(z[i+1]-z[i]);
+                    result[i]=(z[i+1]-z[i]);
+                    //result[i]=Math.abs(ultimade-first);
                 }
             }
             return result;
@@ -274,7 +305,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         public double[] diffVector(double[] a, double[] b){
             double[] result = new double[a.length];
             for(int i=0;i<a.length;i++){
-                result[i]=Math.abs(a[i]-b[i]);
+                result[i]=a[i]-b[i];
+                //result[i]=Math.abs(a[i]-b[i]);
             }
 
             return result;
@@ -292,7 +324,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         public double[] divVector(double[] a, double[] b){
             double[] result = new double[a.length];
             for(int i=0;i<a.length;i++){
-                result[i]=Math.abs(a[i]*Math.pow(b[i], -1));
+                result[i]=a[i]*Math.pow(b[i], -1);
+                //result[i]=Math.abs(a[i]*Math.pow(b[i], -1));
             }
             return result;
         }
@@ -300,7 +333,8 @@ public class Catch_Parasite_Binary_ implements PlugIn {
         public double [] sumVector(double[] a, double[] b){
             double[] result = new double[a.length];
             for(int i=0;i<a.length;i++){
-                result[i]=Math.abs(a[i]+b[i]);
+                result[i]=(a[i]+b[i]);
+                //result[i]=Math.abs(a[i]+b[i]);
             }
             return result;
         }
