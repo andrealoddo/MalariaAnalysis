@@ -9,6 +9,8 @@ import ij.plugin.MeasurementsWriter;
 import ij.plugin.frame.ThresholdAdjuster;
 import ij.plugin.ChannelSplitter;
 import ij.plugin.Thresholder;
+
+import javax.swing.plaf.metal.MetalLookAndFeel;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +46,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
      * Al suo interno, attraverso gli Override, si estendono i meotdi già presenti nella classe ParticleAnalyzer*/
     class Parasite extends ParticleAnalyzer {
         /*Variabili booleani corrispondenti alle misure implementate e aggiunte.*/
-        private boolean[] measures = new boolean[23];
+        private boolean[] measuresBW = new boolean[23];
 
         private boolean
                 doConvexArea,
@@ -71,6 +73,16 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 doHaralickRatio,
                 doBendingEnergy;
 
+        private boolean[] measuresGrey = new boolean[7];
+
+        private boolean doMean,
+                doSkewness,
+                doKurtois,
+                doMode,
+                doMedian,
+                doMax,
+                doMin;
+
         /*piGreco necessario per alcuni calcoli*/
         double pigreco = Math.PI;
         //Salvataggio delle misure già settate in SetMeasurements
@@ -83,9 +95,10 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                         - STD_DEV
                         - KURTOSIS
                         - NaN_EMPTY_CELLS
-                        - INVERT_Y;
-
-
+                        - INVERT_Y
+                        -MEAN
+                        -MEDIAN
+                        -MODE;
         //**//
 
 
@@ -184,50 +197,88 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             gd.addCheckbox("Bending Energy", false);
 
             gd.addMessage("Choise measures for grey");
-            gd.addCheckbox("SelectAll", false); //tutte le misure
+            gd.addCheckbox("SelectAll", true); //tutte le misure
+
+            gd.addCheckbox("Mean", false);
+            gd.addToSameRow();
+            gd.addCheckbox("Skewness", false);
+            gd.addToSameRow();
+            gd.addCheckbox("Kurtois", false);
+
+            gd.addCheckbox("Mode", false);
+            gd.addToSameRow();
+            gd.addCheckbox("Median", false);
+            gd.addToSameRow();
+            gd.addCheckbox("Max", false);
+
+            gd.addCheckbox("Min", false);
+
 
             gd.showDialog(); //show
             if (gd.wasCanceled())
                 return false;
-            boolean doSelectAll = gd.getNextBoolean();  //se viene selezionata la voce "seleziona tutti"
-            if (doSelectAll) { // vengono settati i booleani a true
-                for (int i = 0; i < measures.length; i++) {
-                    measures[i] = true;
+            boolean doSelectAllBW = gd.getNextBoolean();  //se viene selezionata la voce "seleziona tutti"
+            if (doSelectAllBW) { // vengono settati i booleani a true
+                for (int i = 0; i < measuresBW.length; i++) {
+                    measuresBW[i] = true;
                 }
             } else { //altrimenti pescati uno per uno con un certo ordine
-                for (int i = 0; i < measures.length; i++) {
-                    measures[i] = gd.getNextBoolean();
+                for (int i = 0; i < measuresBW.length; i++) {
+                    measuresBW[i] = gd.getNextBoolean();
                     ;
                 }
             }
+
+            boolean doSelectAllGrey = gd.getNextBoolean();  //se viene selezionata la voce "seleziona tutti"
+            if (doSelectAllBW) { // vengono settati i booleani a true
+                for (int i = 0; i < measuresGrey.length; i++) {
+                    measuresGrey[i] = true;
+                }
+            } else { //altrimenti pescati uno per uno con un certo ordine
+                for (int i = 0; i < measuresGrey.length; i++) {
+                    measuresGrey[i] = gd.getNextBoolean();
+                    ;
+                }
+            }
+
+
+
+
             return true;
         }
 
         private void setMeasuresExtended() {
-            doConvexArea = measures[0];
-            doConvexPerimeter = measures[1];
-            doMINRMAXR = measures[2];
-            doAspRatio = measures[3];
-            doCircularity = measures[4];
-            doRoundness = measures[5];
-            doArEquivD = measures[6];
-            doPerEquivD = measures[7];
-            doEquivEllAr = measures[8];
-            doCompactness = measures[9];
-            doSolidity = measures[10];
-            doConcavity = measures[11];
-            doConvexity = measures[12];
-            doShape = measures[13];
-            doRFactor = measures[14];
-            doArBBox = measures[15];
-            doRectang = measures[16];
-            doModRatio = measures[17];
-            doSphericity = measures[18];
-            doElongation = measures[19];
-            doNormPeriIndex = measures[20];
-            doHaralickRatio = measures[21];
-            doBendingEnergy = measures[22];
+            doConvexArea = measuresBW[0];
+            doConvexPerimeter = measuresBW[1];
+            doMINRMAXR = measuresBW[2];
+            doAspRatio = measuresBW[3];
+            doCircularity = measuresBW[4];
+            doRoundness = measuresBW[5];
+            doArEquivD = measuresBW[6];
+            doPerEquivD = measuresBW[7];
+            doEquivEllAr = measuresBW[8];
+            doCompactness = measuresBW[9];
+            doSolidity = measuresBW[10];
+            doConcavity = measuresBW[11];
+            doConvexity = measuresBW[12];
+            doShape = measuresBW[13];
+            doRFactor = measuresBW[14];
+            doArBBox = measuresBW[15];
+            doRectang = measuresBW[16];
+            doModRatio = measuresBW[17];
+            doSphericity = measuresBW[18];
+            doElongation = measuresBW[19];
+            doNormPeriIndex = measuresBW[20];
+            doHaralickRatio = measuresBW[21];
+            doBendingEnergy = measuresBW[22];
 
+            doMean = measuresGrey[0];
+            doSkewness= measuresGrey[1];
+            doKurtois=measuresGrey[2];
+            doMode=measuresGrey[3];
+            doMedian=measuresGrey[4];
+            doMax=measuresGrey[5];
+            doMin=measuresGrey[6];
         }
 
         /*Riguardante ConvexHull-
@@ -422,6 +473,7 @@ public class Catch_Parasite_Binary_ implements PlugIn {
             Polygon polygon = roi.getConvexHull();
             double convexArea = getArea(polygon);
             double convexPerimeter = getPerimeter(polygon);
+
             //ciclo per l'aggiunta dei nuovi valori
             for (int i = 0; i < areas.length; i++) {
                 // double [] minR_maxR = getMinRMaxR(stats.xCenterOfMass, stats.yCenterOfMass);
@@ -479,35 +531,63 @@ public class Catch_Parasite_Binary_ implements PlugIn {
                 if (doBendingEnergy) {
                     double be = getBendingEnergy(polygon);
                     rt.addValue("*Bending Energy", be);
-                }
-                /*
-                Polygon polygon=roi.getConvexHull();
+                    /*
+                    Polygon polygon=roi.getConvexHull();
 
-                double[] x = new double[polygon.npoints];
-                for(int a =0;a<x.length;a++) {
-                    x[a] = (double) polygon.xpoints[a];
-                }
-
-                double [] y = new double[polygon.npoints];
-                for(int c=0;c<y.length;c++) {
-                    y[c] = (double) polygon.ypoints[c];
-                }
-
-                double [] diffX1= diff(x);
-                double [] diffX2= diff(diffX1);
-                double [] diffY1= diff(y);
-                double [] diffY2= diff(diffY1);
-
-                for(int b=0; b<polygon.npoints; b++){
-                    rt.addValue("**X    "+b, x[b]);
-                    rt.addValue("**XDIFF1   "+b, diffX1[b]);
-                    rt.addValue("**XDIFF2   "+b, diffX2[b]);
-                    rt.addValue("**Y    "+b, y[b]);
-                    rt.addValue("**YDIFF1   "+b, diffY1[b]);
-                    rt.addValue("**YDIFF2   "+b, diffY2[b]);
-                };
-
+                    double[] x = new double[polygon.npoints];
+                    for(int a =0;a<x.length;a++) {
+                        x[a] = (double) polygon.xpoints[a];
+                    }
+                    double [] y = new double[polygon.npoints];
+                    for(int c=0;c<y.length;c++) {
+                        y[c] = (double) polygon.ypoints[c];
+                    }
+                    double [] diffX1= diff(x);
+                    double [] diffX2= diff(diffX1);
+                    double [] diffY1= diff(y);
+                    double [] diffY2= diff(diffY1);
+                    for(int b=0; b<polygon.npoints; b++){
+                        rt.addValue("**X    "+b, x[b]);
+                        rt.addValue("**XDIFF1   "+b, diffX1[b]);
+                        rt.addValue("**XDIFF2   "+b, diffX2[b]);
+                        rt.addValue("**Y    "+b, y[b]);
+                        rt.addValue("**YDIFF1   "+b, diffY1[b]);
+                        rt.addValue("**YDIFF2   "+b, diffY2[b]);
+                       };
                 */
+                }
+
+                rt.addValue("**", "**");
+
+                if(doMean){
+                    rt.addValue("**Mean",stats.mean);
+                }
+                if(doSkewness){
+                    rt.addValue("**Skewness",stats.skewness);
+                }
+                if(doKurtois){
+                    rt.addValue("**Kurtois",stats.kurtosis);
+                }
+
+                if(doMode){
+                    rt.addValue("**Mode",stats.dmode);
+                }
+
+                if (doMedian){
+                    rt.addValue("**Median",stats.median);
+                }
+
+                if(doMax){
+                    rt.addValue("**Max",stats.max);
+                }
+
+                if(doMin){
+                    rt.addValue("**Min",stats.min );
+                }
+
+
+
+
             }
         }
     }
