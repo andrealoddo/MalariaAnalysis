@@ -24,8 +24,8 @@ import java.util.Arrays;
  * Si appoggia al Plugin "ThresholdAdjuster" per poter individuare le zone e gli oggetti da analizzare.
  * Implementa Plugin ma al suo interno vi è una classe Parasite che estende a sua volta il PluginFilter "ParticleAnalyzer"
  * aggiungendo misure non presenti in quest'ultimo.*/
-
 public class CatchParasite_Plus2 implements PlugIn {
+    
     /*Metodo run necessaria per i PlugIn
      * Memorizza l'immagine in ingresso
      * richiama il metodo catch_parasite_running dandogli in ingresso l'immagine*/
@@ -75,7 +75,7 @@ public class CatchParasite_Plus2 implements PlugIn {
                 doBendingEnergy;
 
         /*Vettore per checkBox GREY*/
-        private boolean[] measuresGrey = new boolean[7];
+        private boolean[] measuresGrey = new boolean[8];
         /*CheckBox Misure aggiunte GREY*/
         private boolean doMean,
                 doSkewness,
@@ -83,7 +83,9 @@ public class CatchParasite_Plus2 implements PlugIn {
                 doMode,
                 doMedian,
                 doMax,
-                doMin;
+                doMin,
+                doEntropy;
+
 
         /*piGreco necessario per alcuni calcoli*/
         double pigreco = Math.PI;
@@ -93,7 +95,7 @@ public class CatchParasite_Plus2 implements PlugIn {
 
         //Salvataggio delle nuove misure necessarie per il calcolo delle nuove
         int necessary_measures =
-                ALL_STATS + SHAPE_DESCRIPTORS - INVERT_Y - MEAN - KURTOSIS - MODE - SKEWNESS ;
+                ALL_STATS + SHAPE_DESCRIPTORS - INVERT_Y - MEAN - KURTOSIS - MODE - SKEWNESS - NaN_EMPTY_CELLS ;
         //**//
 
         /*showDialog:
@@ -122,8 +124,9 @@ public class CatchParasite_Plus2 implements PlugIn {
             Polygon polygon = roi.getConvexHull();
             double convexArea = getArea(polygon);
             double convexPerimeter = getPerimeter(polygon);
-            double [] feret = roi.getFeretValues(); //0 --> feret , 1 --> angle, 2 --> feret min 
+            double [] feret = roi.getFeretValues(); //0 --> feret , 1 --> angle, 2 --> feret min
             double perim= roi.getLength();
+            int[] hist = stats.histogram;
 
             if (doConvexArea) {//Area of the convex hull polygon
                 rt.addValue("*ConvexArea", convexArea);
@@ -131,7 +134,7 @@ public class CatchParasite_Plus2 implements PlugIn {
             if (doConvexPerimeter) { //Perimeter of the convex hull polygon
                 rt.addValue("*PerimeterConvexHull", convexPerimeter);
             }
- 
+
             if (doMINRMAXR) { //
                 rt.addValue("*MinR", feret[2]/2); //DA RIVEDERE Radius of the inscribed circle centred at the middle of mass
                 rt.addValue("*MaxR", feret[0]/2); //DA RIVEDERE Radius of the enclosing circle centred at the middle of mass
@@ -252,6 +255,12 @@ public class CatchParasite_Plus2 implements PlugIn {
             if(doMin){
                 rt.addValue("**Min",stats.min );
             }
+
+            if(doEntropy){
+                double e = getEntropy(hist, stats.area);
+                rt.addValue("**Entropy", e);
+            }
+
             Analyzer.setMeasurements(old_measures); //per risettare misure vecchie
         }
 
@@ -332,6 +341,8 @@ public class CatchParasite_Plus2 implements PlugIn {
             gd.addCheckbox("Max", false);
 
             gd.addCheckbox("Min", false);
+            gd.addToSameRow();
+            gd.addCheckbox("Entropy", false);
 
 
             gd.showDialog(); //show
@@ -360,7 +371,7 @@ public class CatchParasite_Plus2 implements PlugIn {
                     ;
                 }
             }
-            
+
             return true;
         }
 
@@ -398,6 +409,7 @@ public class CatchParasite_Plus2 implements PlugIn {
             doMedian=measuresGrey[4];
             doMax=measuresGrey[5];
             doMin=measuresGrey[6];
+            doEntropy=measuresGrey[7];
         }
 
         /*Riguardante ConvexHull-
@@ -507,6 +519,18 @@ public class CatchParasite_Plus2 implements PlugIn {
                 sumMean += Math.abs((radii[i] - media) * (radii[i] - media));
             }
             return media / (Math.sqrt(Math.abs(sumMean / numberOfRadius - 1)));
+        }
+
+        private double getEntropy(int[] hist, double area){
+            double sum=0.0;
+            for(int i=0; i< hist.length; i++){
+                if(hist[i]!=0) sum += (double) (hist[i] / area) * log2((double) (hist[i] / area)) ;
+            }
+            return -sum;
+        }
+        // log2:  Logarithm base 2
+        public double log2(double d) {
+            return Math.log(d)/Math.log(2.0);
         }
 
         /*Funzione di appoggio per il caolcolo della distanza*/
