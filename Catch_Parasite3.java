@@ -50,10 +50,10 @@ public class Catch_Parasite3 implements PlugIn {
 
         private  boolean[] measureImageJ = new boolean[12];
         /*Vettore per checkBox B&W*/
-        private boolean[] measuresBW = new boolean[23];
+        private boolean[] measuresBW = new boolean[22];
         /*CheckBox Misure aggiunte B&W*/
         private boolean doConvexArea, doConvexPerimeter, doMINRMAXR,
-                doAspRatio, doCircularity, doRoundness,
+                doAspRatio, doRoundness,
                 doArEquivD, doPerEquivD, doEquivEllAr,
                 doCompactness, doSolidity, doConcavity,
                 doConvexity, doShape, doRFactor,
@@ -62,12 +62,12 @@ public class Catch_Parasite3 implements PlugIn {
                 doHaralickRatio, doBendingEnergy;
 
         /*Vettore per checkBox GREY*/
-        private boolean[] measuresGrey = new boolean[10];
+        private boolean[] measuresGrey = new boolean[11];
         /*CheckBox Misure aggiunte GREY*/
         private boolean doMean, doSkewness, doKurtois,
                 doMode, doMedian, doMax,
                 doMin, doEntropy, doIntensitySum,
-                doSquareIntensitySum;
+                doSquareIntensitySum, doUniformity;
 
         /*piGreco necessario per alcuni calcoli*/
         double pigreco = Math.PI;
@@ -122,25 +122,24 @@ public class Catch_Parasite3 implements PlugIn {
 
             gd.addMessage("Choise measures impleted");
 
-            String[] labels1 = new String[23];
-            boolean[] states1 = new boolean[23];
+            String[] labels1 = new String[11];
+            boolean[] states1 = new boolean[11];
             gd.addCheckbox("Select All", true);
             labels1[0] = "Convex Area";         states1[0] = false;
             labels1[1] = "AspRatio*";           states1[1] = false;
             labels1[2] = "ArEquivD*";           states1[2] = false;
             labels1[3] = "Convex Perimeter*";   states1[3] = false;
-            labels1[4] = "Circ*";               states1[4] = false;
-            labels1[5] = "PerEquivD*";          states1[5] = false;
-            labels1[6] = "MinR and MaxR*";      states1[6] = false;
-            labels1[7] = "Roundness*";          states1[7] = false;
-            labels1[8] = "EquivEllAr*";         states1[8] = false;
-            labels1[9] = "Compactness*";        states1[9] = false;
-            labels1[10] = "Solidity*";          states1[10] = false;
-            labels1[11] = "Shape*";             states1[11] = false;
-            gd.setInsets(1, 0, 0);
+            labels1[4] = "PerEquivD*";          states1[4] = false;
+            labels1[5] = "MinR and MaxR*";      states1[5] = false;
+            labels1[6] = "Roundness*";          states1[6] = false;
+            labels1[7] = "EquivEllAr*";         states1[7] = false;
+            labels1[8] = "Compactness*";        states1[8] = false;
+            labels1[9] = "Solidity*";          states1[9] = false;
+            labels1[10] = "Shape*";             states1[10] = false;
+            gd.setInsets(0, 0, 0);
             gd.addCheckboxGroup(5, 3, labels1, states1);
-            String[] labels2 = new String[23];
-            boolean[] states2 = new boolean[23];
+            String[] labels2 = new String[11];
+            boolean[] states2 = new boolean[11];
             labels2[0] = "Convexity*";         states2[0] = false;
             labels2[1] = "RFactor*";           states2[1] = false;
             labels2[2] = "ArBBox*";            states2[2] = false;
@@ -152,27 +151,30 @@ public class Catch_Parasite3 implements PlugIn {
             labels2[8] = "NormPeriIndex*";     states2[8] = false;
             labels2[9] = "HaralickRatio*";     states2[9] = false;
             labels2[10] = "Bending Energy*";    states2[10] = false;
-            gd.setInsets(1, 0, 0);
+            gd.setInsets(0, 0, 0);
             gd.addCheckboxGroup(5, 3, labels2, states2);
 
             gd.addMessage("Choise measures for grey");
 
-            String[] labels3 = new String[10];
-            boolean[] states3 = new boolean[10];
-
+            String[] labels3 = new String[11];
+            boolean[] states3 = new boolean[11];
             gd.addCheckbox("Select All", true);
+
             labels3[0] = "Mean";                    states3[0] = false;
             labels3[1] = "Skewness";                states3[1] = false;
             labels3[2] = "Intensity Sum*";          states3[2] = false;
-            labels3[3] = "Mode";                    states3[4] = false;
+            labels3[3] = "Mode";                    states3[3] = false;
             labels3[4] = "Kurtosis";                states3[4] = false;
-            labels3[5] = "Square Intensity Sum*";   states3[5] = false;
+            labels3[5] = "Entropy*";                states3[5] = false;
             labels3[6] = "Median";                  states3[6] = false;
-            labels3[7] = "Entropy*";                states3[7] = false;
+            labels3[7] = "Square Intensity Sum*";   states3[7] = false;
             labels3[8] = "Min";                     states3[8] = false;
-            labels3[9] = "Max";                     states3[9] = false;
+            labels3[9] = "Uniformity*";             states3[9] = false;
+            labels3[10] = "Max";                    states3[10] = false;
+            
+
             gd.setInsets(0, 0, 0);
-            gd.addCheckboxGroup(5, 3, labels3, states3);
+            gd.addCheckboxGroup(7, 3, labels3, states3);
 
             gd.showDialog(); //show
             if (gd.wasCanceled())
@@ -218,8 +220,6 @@ public class Catch_Parasite3 implements PlugIn {
                 }
             }
 
-
-
             return true;
         }
 
@@ -230,50 +230,51 @@ public class Catch_Parasite3 implements PlugIn {
             if(measureImageJ[0]) {measure+=AREA;}
             if(measureImageJ[1]) {measure+=STD_DEV;}
             if(measureImageJ[2]) {measure+=CENTROID;}
-            if(measureImageJ[3]) {measure+=PERIMETER;}
-            if(measureImageJ[4]) {measure+=RECT;}
-            if(measureImageJ[5]) {measure+=ELLIPSE;}
-            if(measureImageJ[6]) {measure+=SHAPE_DESCRIPTORS;}
-            if(measureImageJ[7]) {measure+=FERET;}
-            if(measureImageJ[8]) {measure+=INTEGRATED_DENSITY;}
-            if(measureImageJ[9]) {measure+=AREA_FRACTION;}
-            if(measureImageJ[10]) {measure+=STACK_POSITION;}
+            if(measureImageJ[3]) {measure+=CENTER_OF_MASS;}
+            if(measureImageJ[4]) {measure+=PERIMETER;}
+            if(measureImageJ[5]) {measure+=RECT;}
+            if(measureImageJ[6]) {measure+=ELLIPSE;}
+            if(measureImageJ[7]) {measure+=SHAPE_DESCRIPTORS;}
+            if(measureImageJ[8]) {measure+=FERET;}
+            if(measureImageJ[9]) {measure+=INTEGRATED_DENSITY;}
+            if(measureImageJ[10]) {measure+=AREA_FRACTION;}
+            if(measureImageJ[11]) {measure+=STACK_POSITION;}
 
-            /*Misure by ImageJ*/
+            /*Misure BW*/
             doConvexArea = measuresBW[0];
             doAspRatio = measuresBW[1];
             doArEquivD = measuresBW[2];
             doConvexPerimeter = measuresBW[3];
-            doCircularity = measuresBW[4];
-            doPerEquivD = measuresBW[5];
-            doMINRMAXR = measuresBW[6];
-            doRoundness= measuresBW[7];
-            doEquivEllAr = measuresBW[8];
-            doCompactness = measuresBW[9];
-            doSolidity = measuresBW[10];
-            doShape = measuresBW[11];
-            doConvexity = measuresBW[12];
-            doRFactor = measuresBW[13];
-            doArBBox = measuresBW[14];
-            doConcavity = measuresBW[15];
-            doRectang = measuresBW[16];
-            doModRatio = measuresBW[17];
-            doSphericity = measuresBW[18];
-            doElongation = measuresBW[19];
-            doNormPeriIndex = measuresBW[20];
-            doHaralickRatio = measuresBW[21];
-            doBendingEnergy = measuresBW[22];
+            doPerEquivD = measuresBW[4];
+            doMINRMAXR = measuresBW[5];
+            doRoundness= measuresBW[6];
+            doEquivEllAr = measuresBW[7];
+            doCompactness = measuresBW[8];
+            doSolidity = measuresBW[9];
+            doShape = measuresBW[10];
+            doConvexity = measuresBW[11];
+            doRFactor = measuresBW[12];
+            doArBBox = measuresBW[13];
+            doConcavity = measuresBW[14];
+            doRectang = measuresBW[15];
+            doModRatio = measuresBW[16];
+            doSphericity = measuresBW[17];
+            doElongation = measuresBW[18];
+            doNormPeriIndex = measuresBW[19];
+            doHaralickRatio = measuresBW[20];
+            doBendingEnergy = measuresBW[21];
 
-            /*Misure by ImageJ*/
+            /*Misure Grey*/
             doMean = measuresGrey [0];
             doSkewness = measuresGrey [1]; if(doSkewness) {measure+=SKEWNESS;}
             doIntensitySum = measuresGrey [2];
             doMode = measuresGrey [3];
             doKurtois = measuresGrey [4]; if(doKurtois) {measure+=KURTOSIS;}
-            doSquareIntensitySum = measuresGrey [5];
-            doMedian = measuresGrey [6]; if(doMedian) {measure+=MEDIAN;}
             doEntropy = measuresGrey [7];
+            doMedian = measuresGrey [6]; if(doMedian) {measure+=MEDIAN;}
+            doSquareIntensitySum = measuresGrey [5];
             doMin = measuresGrey [8];
+            doUniformity= measuresGrey[9];
             doMax = measuresGrey [9];
         }
 
@@ -305,9 +306,6 @@ public class Catch_Parasite3 implements PlugIn {
 
             if (doAspRatio) //Aspect ratio = Feret/Breadth = L/W also called Feret ratio or Eccentricity or Rectangular ratio
                 rt.addValue("*AspRatio", feret[0]/feret[2]);
-
-            if (doCircularity) //Circularity = 4·?·Area/Perim2  also called Formfactor or Shapefactor
-                rt.addValue("*Circularity", (4 * pigreco * stats.area) / (perim*perim));
 
             if (doRoundness) //Roundness = 4·Area/(?·Feret2)
                 rt.addValue("*Roundness", (stats.area*4) / ((pigreco) * (feret[0]*feret[0])));
@@ -410,6 +408,12 @@ public class Catch_Parasite3 implements PlugIn {
                 int intensitySum = getIntensitySum(hist);
                 rt.addValue("**Square intensity sum (SqI sum)", Math.sqrt((double) intensitySum));
             }
+
+            if(doUniformity){
+                rt.addValue("**Uniformity)", getUniformity(hist, stats.area));
+            }
+
+            
 
             Analyzer.setMeasurements(old_measures); //per risettare misure vecchie
         }
@@ -540,6 +544,17 @@ public class Catch_Parasite3 implements PlugIn {
                 sum+=i*hist[i];
             }
             return sum;
+        }
+
+        private double getUniformity (int [] hist, double area){
+            double uniformity=0.0;
+
+            for (int i=0; i< hist.length; i++){
+                uniformity += Math.sqrt((double) hist[i]/area);
+            }
+
+            return uniformity;
+
         }
 
         /*Funzione di appoggio per il caolcolo della distanza*/
