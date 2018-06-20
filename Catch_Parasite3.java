@@ -105,18 +105,18 @@ public class Catch_Parasite3 implements PlugIn {
 
             gd.addCheckbox("Select All", true);
 
-            labels[0] = "Area";                 states[0] = false;
-            labels[1] = "Standard deviation";   states[1] = false;
-            labels[2] = "Centroid";             states[2] = false;
-            labels[3] = "Center of mass";       states[3] = false;
-            labels[4] = "Perimeter";            states[4] = false;
-            labels[5] = "Bounding rectangle";   states[5] = false;
-            labels[6] = "Fit ellipse";          states[6] = false;
-            labels[7] = "Shape descriptors";    states[7] = false;
-            labels[8] = "Feret's diameter";    states[8] = false;
-            labels[9] = "Integrated density";  states[9] = false;
-            labels[10] = "Area_fraction";       states[10] = false;
-            labels[11] = "Stack position";      states[11] = false;
+            labels[0] = "Area                  ";                  states[0] = false;
+            labels[1] = "Standard deviation    ";                  states[1] = false;
+            labels[2] = "Centroid              ";                  states[2] = false;
+            labels[3] = "Center of mass        ";                  states[3] = false;
+            labels[4] = "Perimeter             ";                  states[4] = false;
+            labels[5] = "Bounding rectangle    ";                  states[5] = false;
+            labels[6] = "Fit ellipse           ";                  states[6] = false;
+            labels[7] = "Shape descriptors     ";                  states[7] = false;
+            labels[8] = "Feret's diameter      ";                  states[8] = false;
+            labels[9] = "Integrated density    ";                  states[9] = false;
+            labels[10] = "Area_fraction        ";                  states[10] = false;
+            labels[11] = "Stack position       ";                  states[11] = false;
             gd.setInsets(1, 0, 0);
             gd.addCheckboxGroup(5, 3, labels, states);
 
@@ -125,32 +125,32 @@ public class Catch_Parasite3 implements PlugIn {
             String[] labels1 = new String[11];
             boolean[] states1 = new boolean[11];
             gd.addCheckbox("Select All", true);
-            labels1[0] = "Convex Area";         states1[0] = false;
-            labels1[1] = "AspRatio*";           states1[1] = false;
-            labels1[2] = "ArEquivD*";           states1[2] = false;
-            labels1[3] = "Convex Perimeter*";   states1[3] = false;
-            labels1[4] = "PerEquivD*";          states1[4] = false;
-            labels1[5] = "MinR and MaxR*";      states1[5] = false;
-            labels1[6] = "Roundness*";          states1[6] = false;
-            labels1[7] = "EquivEllAr*";         states1[7] = false;
-            labels1[8] = "Compactness*";        states1[8] = false;
-            labels1[9] = "Solidity*";          states1[9] = false;
-            labels1[10] = "Shape*";             states1[10] = false;
+            labels1[0] = "Convex Area           ";                  states1[0] = false;
+            labels1[1] = "AspRatio*             ";                  states1[1] = false;
+            labels1[2] = "ArEquivD*             ";                  states1[2] = false;
+            labels1[3] = "Convex Perimeter*     ";                  states1[3] = false;
+            labels1[4] = "PerEquivD*            ";                  states1[4] = false;
+            labels1[5] = "MinR and MaxR*        ";                  states1[5] = false;
+            labels1[6] = "Roundness*            ";                  states1[6] = false;
+            labels1[7] = "EquivEllAr*           ";                  states1[7] = false;
+            labels1[8] = "Compactness*          ";                  states1[8] = false;
+            labels1[9] = "Solidity*             ";                  states1[9] = false;
+            labels1[10] = "Shape*               ";                  states1[10] = false;
             gd.setInsets(0, 0, 0);
             gd.addCheckboxGroup(5, 3, labels1, states1);
             String[] labels2 = new String[11];
             boolean[] states2 = new boolean[11];
-            labels2[0] = "Convexity*";         states2[0] = false;
-            labels2[1] = "RFactor*";           states2[1] = false;
-            labels2[2] = "ArBBox*";            states2[2] = false;
-            labels2[3] = "Concavity*";         states2[3] = false;
-            labels2[4] = "Rectang*";           states2[4] = false;
-            labels2[5] = "ModRatio*";          states2[5] = false;
-            labels2[6] = "Sphericity*";        states2[6] = false;
-            labels2[7] = "Elongation*";        states2[7] = false;
-            labels2[8] = "NormPeriIndex*";     states2[8] = false;
-            labels2[9] = "HaralickRatio*";     states2[9] = false;
-            labels2[10] = "Bending Energy*";    states2[10] = false;
+            labels2[0] = "Convexity*              ";                  states2[0] = false;
+            labels2[1] = "RFactor*                ";                  states2[1] = false;
+            labels2[2] = "ArBBox*                 ";                  states2[2] = false;
+            labels2[3] = "Concavity*              ";                  states2[3] = false;
+            labels2[4] = "Rectang*                ";                  states2[4] = false;
+            labels2[5] = "ModRatio*               ";                  states2[5] = false;
+            labels2[6] = "Sphericity*             ";                  states2[6] = false;
+            labels2[7] = "Elongation*             ";                  states2[7] = false;
+            labels2[8] = "NormPeriIndex*          ";                  states2[8] = false;
+            labels2[9] = "HaralickRatio*          ";                  states2[9] = false;
+            labels2[10] = "Bending Energy*        ";                  states2[10] = false;
             gd.setInsets(0, 0, 0);
             gd.addCheckboxGroup(5, 3, labels2, states2);
 
@@ -160,19 +160,17 @@ public class Catch_Parasite3 implements PlugIn {
             boolean[] states3 = new boolean[11];
             gd.addCheckbox("Select All", true);
 
-            labels3[0] = "Mean";                    states3[0] = false;
-            labels3[1] = "Skewness";                states3[1] = false;
-            labels3[2] = "Intensity Sum*";          states3[2] = false;
-            labels3[3] = "Mode";                    states3[3] = false;
-            labels3[4] = "Kurtosis";                states3[4] = false;
-            labels3[5] = "Entropy*";                states3[5] = false;
-            labels3[6] = "Median";                  states3[6] = false;
-            labels3[7] = "Square Intensity Sum*";   states3[7] = false;
-            labels3[8] = "Min";                     states3[8] = false;
-            labels3[9] = "Uniformity*";             states3[9] = false;
-            labels3[10] = "Max";                    states3[10] = false;
-            
-
+            labels3[0] = "Mean                      ";                 states3[0] = false;
+            labels3[1] = "Skewness                  ";                 states3[1] = false;
+            labels3[2] = "Intensity Sum*            ";                 states3[2] = false;
+            labels3[3] = "Mode                      ";                 states3[3] = false;
+            labels3[4] = "Kurtosis                  ";                 states3[4] = false;
+            labels3[5] = "Entropy*                  ";                 states3[5] = false;
+            labels3[6] = "Median                    ";                 states3[6] = false;
+            labels3[7] = "SqI sum*                  ";                 states3[7] = false;
+            labels3[8] = "Min                       ";                 states3[8] = false;
+            labels3[9] = "Uniformity*               ";                 states3[9] = false;
+            labels3[10] = "Max                      ";                 states3[10] = false;
             gd.setInsets(0, 0, 0);
             gd.addCheckboxGroup(7, 3, labels3, states3);
 
@@ -410,10 +408,10 @@ public class Catch_Parasite3 implements PlugIn {
             }
 
             if(doUniformity){
-                rt.addValue("**Uniformity)", getUniformity(hist, stats.area));
+                rt.addValue("**Uniformity", getUniformity(hist, stats.area));
             }
 
-            
+
 
             Analyzer.setMeasurements(old_measures); //per risettare misure vecchie
         }
