@@ -48,7 +48,7 @@ public class Catch_Parasite3 implements PlugIn {
     class Parasite extends ParticleAnalyzer {
         int measure=0;
 
-        private  boolean[] measureImageJ = new boolean[12];
+        private  boolean[] measureImageJ = new boolean[11];
         /*Vettore per checkBox B&W*/
         private boolean[] measuresBW = new boolean[22];
         /*CheckBox Misure aggiunte B&W*/
@@ -61,13 +61,15 @@ public class Catch_Parasite3 implements PlugIn {
                 doSphericity, doElongation, doNormPeriIndex,
                 doHaralickRatio, doBendingEnergy;
 
+
         /*Vettore per checkBox GREY*/
-        private boolean[] measuresGrey = new boolean[11];
+        private boolean[] measuresGrey = new boolean[14];
         /*CheckBox Misure aggiunte GREY*/
         private boolean doMean, doSkewness, doKurtois,
                 doMode, doMedian, doMax,
                 doMin, doEntropy, doIntensitySum,
-                doSquareIntensitySum, doUniformity;
+                doSquareIntensitySum, doUniformity, doVariance, doStandardDeviation,
+                doSmothness;
 
         /*piGreco necessario per alcuni calcoli*/
         double pigreco = Math.PI;
@@ -100,23 +102,22 @@ public class Catch_Parasite3 implements PlugIn {
             gd.addMessage("Catch parasite");
             gd.addMessage("Choise measures for B&W");
 
-            String[] labels = new String[12];
-            boolean[] states = new boolean[12];
+            String[] labels = new String[11];
+            boolean[] states = new boolean[11];
 
             gd.addCheckbox("Select All", true);
 
             labels[0] = "Area                  ";                  states[0] = false;
-            labels[1] = "Standard deviation    ";                  states[1] = false;
-            labels[2] = "Centroid              ";                  states[2] = false;
-            labels[3] = "Center of mass        ";                  states[3] = false;
-            labels[4] = "Perimeter             ";                  states[4] = false;
-            labels[5] = "Bounding rectangle    ";                  states[5] = false;
-            labels[6] = "Fit ellipse           ";                  states[6] = false;
-            labels[7] = "Shape descriptors     ";                  states[7] = false;
-            labels[8] = "Feret's diameter      ";                  states[8] = false;
-            labels[9] = "Integrated density    ";                  states[9] = false;
-            labels[10] = "Area_fraction        ";                  states[10] = false;
-            labels[11] = "Stack position       ";                  states[11] = false;
+            labels[1] = "Centroid              ";                  states[1] = false;
+            labels[2] = "Center of mass        ";                  states[2] = false;
+            labels[3] = "Perimeter             ";                  states[3] = false;
+            labels[4] = "Bounding rectangle    ";                  states[4] = false;
+            labels[5] = "Fit ellipse           ";                  states[5] = false;
+            labels[6] = "Shape descriptors     ";                  states[6] = false;
+            labels[7] = "Feret's diameter      ";                  states[7] = false;
+            labels[8] = "Integrated density    ";                  states[8] = false;
+            labels[9] = "Area_fraction         ";                  states[9] = false;
+            labels[10] = "Stack position       ";                  states[10] = false;
             gd.setInsets(1, 0, 0);
             gd.addCheckboxGroup(5, 3, labels, states);
 
@@ -156,23 +157,25 @@ public class Catch_Parasite3 implements PlugIn {
 
             gd.addMessage("Choise measures for grey");
 
-            String[] labels3 = new String[11];
-            boolean[] states3 = new boolean[11];
+            String[] labels3 = new String[14];
+            boolean[] states3 = new boolean[14];
             gd.addCheckbox("Select All", true);
-
             labels3[0] = "Mean                      ";                 states3[0] = false;
             labels3[1] = "Skewness                  ";                 states3[1] = false;
             labels3[2] = "Intensity Sum*            ";                 states3[2] = false;
             labels3[3] = "Mode                      ";                 states3[3] = false;
             labels3[4] = "Kurtosis                  ";                 states3[4] = false;
             labels3[5] = "Entropy*                  ";                 states3[5] = false;
-            labels3[6] = "Median                    ";                 states3[6] = false;
-            labels3[7] = "SqI sum*                  ";                 states3[7] = false;
-            labels3[8] = "Min                       ";                 states3[8] = false;
-            labels3[9] = "Uniformity*               ";                 states3[9] = false;
-            labels3[10] = "Max                      ";                 states3[10] = false;
+            labels3[6] = "Min                       ";                 states3[6] = false;
+            labels3[7] = "Uniformity*               ";                 states3[7] = false;
+            labels3[8] = "SqI sum*                  ";                 states3[8] = false;
+            labels3[9] = "Max                       ";                 states3[9] = false;
+            labels3[10] = "Std deviation            ";                 states3[10] = false;
+            labels3[11] = "Variance*                ";                 states3[11] = false;
+            labels3[12] = "Median                   ";                 states3[12] = false;
+            labels3[13] = "Smoothness R*            ";                 states3[13] = false;
             gd.setInsets(0, 0, 0);
-            gd.addCheckboxGroup(7, 3, labels3, states3);
+            gd.addCheckboxGroup(5, 3, labels3, states3);
 
             gd.showDialog(); //show
             if (gd.wasCanceled())
@@ -191,7 +194,6 @@ public class Catch_Parasite3 implements PlugIn {
                     measureImageJ[i]=gd.getNextBoolean();
                 }
             }
-
 
             //BW
             if(gd.getNextBoolean()){
@@ -226,17 +228,17 @@ public class Catch_Parasite3 implements PlugIn {
         private void setMeasuresExtended() {
             /*Misure by ImageJ*/
             if(measureImageJ[0]) {measure+=AREA;}
-            if(measureImageJ[1]) {measure+=STD_DEV;}
-            if(measureImageJ[2]) {measure+=CENTROID;}
-            if(measureImageJ[3]) {measure+=CENTER_OF_MASS;}
-            if(measureImageJ[4]) {measure+=PERIMETER;}
-            if(measureImageJ[5]) {measure+=RECT;}
-            if(measureImageJ[6]) {measure+=ELLIPSE;}
-            if(measureImageJ[7]) {measure+=SHAPE_DESCRIPTORS;}
-            if(measureImageJ[8]) {measure+=FERET;}
-            if(measureImageJ[9]) {measure+=INTEGRATED_DENSITY;}
-            if(measureImageJ[10]) {measure+=AREA_FRACTION;}
-            if(measureImageJ[11]) {measure+=STACK_POSITION;}
+            //if(measureImageJ[1]) {measure+=STD_DEV;}
+            if(measureImageJ[1]) {measure+=CENTROID;}
+            if(measureImageJ[2]) {measure+=CENTER_OF_MASS;}
+            if(measureImageJ[3]) {measure+=PERIMETER;}
+            if(measureImageJ[4]) {measure+=RECT;}
+            if(measureImageJ[5]) {measure+=ELLIPSE;}
+            if(measureImageJ[6]) {measure+=SHAPE_DESCRIPTORS;}
+            if(measureImageJ[7]) {measure+=FERET;}
+            if(measureImageJ[8]) {measure+=INTEGRATED_DENSITY;}
+            if(measureImageJ[9]) {measure+=AREA_FRACTION;}
+            if(measureImageJ[10]) {measure+=STACK_POSITION;}
 
             /*Misure BW*/
             doConvexArea = measuresBW[0];
@@ -262,18 +264,26 @@ public class Catch_Parasite3 implements PlugIn {
             doHaralickRatio = measuresBW[20];
             doBendingEnergy = measuresBW[21];
 
+
             /*Misure Grey*/
             doMean = measuresGrey [0];
             doSkewness = measuresGrey [1]; if(doSkewness) {measure+=SKEWNESS;}
             doIntensitySum = measuresGrey [2];
+
             doMode = measuresGrey [3];
             doKurtois = measuresGrey [4]; if(doKurtois) {measure+=KURTOSIS;}
-            doEntropy = measuresGrey [7];
-            doMedian = measuresGrey [6]; if(doMedian) {measure+=MEDIAN;}
-            doSquareIntensitySum = measuresGrey [5];
-            doMin = measuresGrey [8];
-            doUniformity= measuresGrey[9];
+            doEntropy = measuresGrey [5];
+
+            doMin = measuresGrey [6];
+            doUniformity= measuresGrey[7];
+            doSquareIntensitySum = measuresGrey [8];
+
             doMax = measuresGrey [9];
+            doStandardDeviation= measuresGrey[10];
+            doVariance=measuresGrey[11];
+
+            doMedian = measuresGrey [12]; if(doMedian) {measure+=MEDIAN;}
+            doSmothness = measuresGrey [13];
         }
 
         /*saveResults:
@@ -363,6 +373,14 @@ public class Catch_Parasite3 implements PlugIn {
             }
 
             /**/
+            if(doVariance){
+                rt.addValue("**Variance", Math.pow(stats.stdDev, 2));
+            }
+
+            if(doStandardDeviation){
+                rt.addValue("Standard deviation", stats.stdDev);
+            }
+
             if(doMean){
                 rt.addValue("**Mean",stats.mean);
             }
@@ -411,11 +429,12 @@ public class Catch_Parasite3 implements PlugIn {
                 rt.addValue("**Uniformity", getUniformity(hist, stats.area));
             }
 
+            if(doSmothness){
+                rt.addValue("**Smothness R", getSmoothness(Math.pow(stats.stdDev,2)));
+            }
 
 
-            Analyzer.setMeasurements(old_measures); //per risettare misure vecchie
         }
-
 
         /*Riguardante ConvexHull-
          * Rivisitazione del metodo getArea da Analyzer(super-super classe) per cui dati i punti del poligono calcola l'area
@@ -432,6 +451,19 @@ public class Catch_Parasite3 implements PlugIn {
             }
             return (Math.abs(carea / 2.0));
         }
+
+        private double getSmoothness(double variance){
+            //the variance in this measure is normalized to the rage [0, 1] by dividing it by (L-1)^2
+            //L --> grey level
+
+            //only grey level in the object or in the histagram?
+            int greyLevel = 256;
+
+            double varianceNormalized = variance / Math.pow(greyLevel-1,2);
+
+            return 1- (1/(1+varianceNormalized));
+        }
+
 
         /*Riguardante ConvexHull-
          * Calcolo del perimetro dato i punti del poligono e calcolando le distanze tra i punti*/
