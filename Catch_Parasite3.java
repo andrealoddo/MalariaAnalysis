@@ -378,7 +378,7 @@ public class Catch_Parasite3 implements PlugIn {
             }
 
             if(doStandardDeviation){
-                rt.addValue("Standard deviation", stats.stdDev);
+                rt.addValue("**Standard deviation", stats.stdDev);
             }
 
             if(doMean){
