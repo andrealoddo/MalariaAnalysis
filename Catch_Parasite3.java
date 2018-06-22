@@ -86,7 +86,9 @@ public class Catch_Parasite3 implements PlugIn {
             //super.staticShowChoice = 1;
             boolean flag = super.showDialog();
             if (flag) {
-                flag= genericDialog();
+                boolean typeRGB=false;
+                if (imp.getType()==ImagePlus.COLOR_RGB) typeRGB=true;
+                flag = genericDialog(typeRGB);
                 setMeasuresExtended();
                 Analyzer.setMeasurements(measure);
                 return flag;
@@ -97,7 +99,7 @@ public class Catch_Parasite3 implements PlugIn {
         /*Metodo della creazione della finestra di dialogo, visualizzazione del:
          * - checkbox per selezionare ogni misura
          * - checkbox per selezionare misure singole*/
-        private boolean genericDialog() {
+        private boolean genericDialog(boolean typeRGB) {
             GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
             gd.addMessage("Catch parasite");
             gd.addMessage("Choise measures for B&W");
@@ -160,20 +162,37 @@ public class Catch_Parasite3 implements PlugIn {
             String[] labels3 = new String[14];
             boolean[] states3 = new boolean[14];
             gd.addCheckbox("Select All", true);
-            labels3[0] = "Mean                      ";                 states3[0] = false;
-            labels3[1] = "Skewness                  ";                 states3[1] = false;
-            labels3[2] = "Intensity Sum*            ";                 states3[2] = false;
-            labels3[3] = "Mode                      ";                 states3[3] = false;
-            labels3[4] = "Kurtosis                  ";                 states3[4] = false;
-            labels3[5] = "Entropy*                  ";                 states3[5] = false;
-            labels3[6] = "Min                       ";                 states3[6] = false;
-            labels3[7] = "Uniformity*               ";                 states3[7] = false;
-            labels3[8] = "SqI sum*                  ";                 states3[8] = false;
-            labels3[9] = "Max                       ";                 states3[9] = false;
-            labels3[10] = "Std deviation            ";                 states3[10] = false;
-            labels3[11] = "Variance*                ";                 states3[11] = false;
-            labels3[12] = "Median                   ";                 states3[12] = false;
-            labels3[13] = "Smoothness R*            ";                 states3[13] = false;
+            if(typeRGB){
+                labels3[0] = "Mean                      ";                 states3[0] = false;
+                labels3[1] = "Skewness                  ";                 states3[1] = false;
+                labels3[2] = "Intensity Sum*            ";                 states3[2] = false;
+                labels3[3] = "Mode                      ";                 states3[3] = false;
+                labels3[4] = "Kurtosis                  ";                 states3[4] = false;
+                labels3[6] = "None                       ";                 states3[6] = false;
+                labels3[5] = "Entropy*                  ";                 states3[5] = false;
+                labels3[7] = "Uniformity*               ";                 states3[7] = false;
+                labels3[8] = "SqI sum*                  ";                 states3[8] = false;
+                labels3[9] = "None                       ";                 states3[9] = false;
+                labels3[10] = "Std deviation            ";                 states3[10] = false;
+                labels3[11] = "Variance*                ";                 states3[11] = false;
+                labels3[12] = "Median                   ";                 states3[12] = false;
+                labels3[13] = "Smoothness R*            ";                 states3[13] = false;
+            }else{
+                labels3[0] = "Mean                      ";                 states3[0] = false;
+                labels3[1] = "Skewness                  ";                 states3[1] = false;
+                labels3[2] = "Intensity Sum*            ";                 states3[2] = false;
+                labels3[3] = "Mode                      ";                 states3[3] = false;
+                labels3[4] = "Kurtosis                  ";                 states3[4] = false;
+                labels3[5] = "Entropy*                  ";                 states3[5] = false;
+                labels3[6] = "Min                       ";                 states3[6] = false;
+                labels3[7] = "Uniformity*               ";                 states3[7] = false;
+                labels3[8] = "SqI sum*                  ";                 states3[8] = false;
+                labels3[9] = "Max                       ";                 states3[9] = false;
+                labels3[10] = "Std deviation            ";                 states3[10] = false;
+                labels3[11] = "Variance*                ";                 states3[11] = false;
+                labels3[12] = "Median                   ";                 states3[12] = false;
+                labels3[13] = "Smoothness R*            ";                 states3[13] = false;
+            }
             gd.setInsets(0, 0, 0);
             gd.addCheckboxGroup(5, 3, labels3, states3);
 
@@ -220,6 +239,10 @@ public class Catch_Parasite3 implements PlugIn {
                 }
             }
 
+            if(typeRGB) {
+                measuresGrey[6]=measuresGrey[9]=false;
+            }
+
             return true;
         }
 
@@ -228,7 +251,6 @@ public class Catch_Parasite3 implements PlugIn {
         private void setMeasuresExtended() {
             /*Misure by ImageJ*/
             if(measureImageJ[0]) {measure+=AREA;}
-            //if(measureImageJ[1]) {measure+=STD_DEV;}
             if(measureImageJ[1]) {measure+=CENTROID;}
             if(measureImageJ[2]) {measure+=CENTER_OF_MASS;}
             if(measureImageJ[3]) {measure+=PERIMETER;}
@@ -433,6 +455,8 @@ public class Catch_Parasite3 implements PlugIn {
                 rt.addValue("**Smothness R", getSmoothness(Math.pow(stats.stdDev,2)));
             }
 
+            rt.addValue("**pROVA", hist[0]);
+
 
         }
 
@@ -584,7 +608,6 @@ public class Catch_Parasite3 implements PlugIn {
             }
 
             return uniformity;
-
         }
 
         /*Funzione di appoggio per il caolcolo della distanza*/
