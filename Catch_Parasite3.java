@@ -26,6 +26,7 @@ import java.util.Arrays;
      * aggiungendo misure non presenti in quest'ultimo.*/
     public class Catch_Parasite3 implements PlugIn {
         ImagePlus impVector [];
+        boolean typeRGB;
 
         /*Metodo run necessaria per i PlugIn
          * Memorizza l'immagine in ingresso
@@ -33,15 +34,18 @@ import java.util.Arrays;
         public void run(String arg) {
             Parasite parasite = new Parasite();
             ImagePlus imp = IJ.getImage();
-            ChannelSplitter ch = new ChannelSplitter();
-            impVector = ch.split(imp);
+            if (imp.getType() == ImagePlus.COLOR_RGB) typeRGB = true;
+            if(typeRGB){
+                ChannelSplitter ch = new ChannelSplitter();
+                impVector = ch.split(imp);
+            }
+            
             int flags = parasite.setup("", imp);
 
             /*Controllo*/
             if (flags == PlugInFilter.DONE)
                 return;
             parasite.run(imp.getProcessor());
-
             /*visualizzazione dei risultati*/
             Analyzer.getResultsTable().show("Results");
         }
