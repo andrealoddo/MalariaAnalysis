@@ -93,6 +93,7 @@ import java.util.Arrays;
             @Override
             public boolean showDialog() {
                 //super.staticShowChoice = 1;
+
                 boolean flag = super.showDialog();
                 if (flag) {
                     if (imp.getType() == ImagePlus.COLOR_RGB) typeRGB = true;
@@ -109,8 +110,8 @@ import java.util.Arrays;
              * - checkbox per selezionare misure singole*/
             private boolean genericDialog(boolean typeRGB) {
                 GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
-
-                gd.addMessage("Choise measures for B&W");
+                Font font = new Font("font", Font.ITALIC, 11);
+                gd.addMessage("Select the measures for B&W", font, Color.black);
                 String[] labels = new String[11];
                 boolean[] states = new boolean[11];
                 gd.addCheckbox("Select All", true);
@@ -140,7 +141,7 @@ import java.util.Arrays;
                 gd.setInsets(1, 0, 0);
                 gd.addCheckboxGroup(4, 4, labels, states);
 
-                gd.addMessage("Choise measures impleted");
+                gd.addMessage("Select the measures for B&W implemented", font, Color.black);
                 String[] labels1 = new String[11];
                 boolean[] states1 = new boolean[11];
                 gd.addCheckbox("Select All", true);
@@ -196,7 +197,7 @@ import java.util.Arrays;
                 gd.setInsets(0, 0, 0);
                 gd.addCheckboxGroup(4, 4, labels2, states2);
 
-                gd.addMessage("Select measures for grey");
+                gd.addMessage("Select the measures for Grey implemented", font, Color.GRAY);
 
                 if(typeRGB){
                     String[] labels3 = new String[12];
@@ -264,7 +265,10 @@ import java.util.Arrays;
                 }
 
                 if(typeRGB){
-                    gd.addMessage("Select measure RGB");
+
+                    gd.addMessage("Select the measures for RGB", font, Color.red);
+
+                   // gd.addMessage("Select the measures", font, colors[0]+ "for RGB implemented", font, colors[1]);
                     gd.addCheckbox("Select All", true);
                     String[] labels4 = new String[10];
                     boolean[] states4 = new boolean[10];
