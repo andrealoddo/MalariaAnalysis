@@ -73,9 +73,10 @@ import java.util.Arrays;
                     doSquareIntensitySum, doUniformity, doVariance, doStandardDeviation,
                     doSmothness, doMinandMax;
 
-            private boolean[] measureRGB = new boolean[6];
+            private boolean[] measureRGB = new boolean[10];
             private boolean doMeanRed, doMeanGreen, doMeanBlue,
-                            doStdDeviationRed, doStdDeviationGreen, doStdDeviationBlue;
+                            doStdDeviationRed, doStdDeviationGreen, doStdDeviationBlue,
+                            doSquareRootMeanR, doSquareRootMeanG, doSquareRootMeanB, doAverageRGBcolors;
 
             /*piGreco necessario per alcuni calcoli*/
             double pigreco = Math.PI;
@@ -108,7 +109,7 @@ import java.util.Arrays;
              * - checkbox per selezionare misure singole*/
             private boolean genericDialog(boolean typeRGB) {
                 GenericDialog gd = new GenericDialog("Parassite Prova", IJ.getInstance());
-                
+
                 gd.addMessage("Choise measures for B&W");
                 String[] labels = new String[11];
                 boolean[] states = new boolean[11];
@@ -193,7 +194,7 @@ import java.util.Arrays;
                 labels2[10] = "Bending Energy*        ";
                 states2[10] = false;
                 gd.setInsets(0, 0, 0);
-                gd.addCheckboxGroup(5, 4, labels2, states2);
+                gd.addCheckboxGroup(4, 4, labels2, states2);
 
                 gd.addMessage("Select measures for grey");
 
@@ -226,7 +227,7 @@ import java.util.Arrays;
                     labels3[11] = "Smoothness R*            ";
                     states3[11] = false;
                     gd.setInsets(0, 0, 0);
-                    gd.addCheckboxGroup(5, 3, labels3, states3);
+                    gd.addCheckboxGroup(4, 4, labels3, states3);
                 }else
                 {
                     String[] labels3 = new String[13];
@@ -259,29 +260,37 @@ import java.util.Arrays;
                     labels3[12] = "Min and Max              ";
                     states3[12] = false;
                     gd.setInsets(0, 0, 0);
-                    gd.addCheckboxGroup(5, 3, labels3, states3);
+                    gd.addCheckboxGroup(5, 4, labels3, states3);
                 }
 
                 if(typeRGB){
                     gd.addMessage("Select measure RGB");
                     gd.addCheckbox("Select All", true);
-                    String[] labels4 = new String[6];
-                    boolean[] states4 = new boolean[6];
+                    String[] labels4 = new String[10];
+                    boolean[] states4 = new boolean[10];
 
                     labels4[0] = "R mean*                      ";
                     states4[0] = false;
                     labels4[1] = "R std deviation*             ";
                     states4[1] = false;
-                    labels4[2] = "G mean*                      ";
+                    labels4[2] = "Square root of mean R*      ";
                     states4[2] = false;
-                    labels4[3] = "G std deviation*             ";
+                    labels4[3] = "G mean*                      ";
                     states4[3] = false;
-                    labels4[4] = "B mean*                     ";
+                    labels4[4] = "G std deviation*             ";
                     states4[4] = false;
-                    labels4[5] = "B std deviation*            ";
+                    labels4[5] = "Square root of mean G*      ";
                     states4[5] = false;
+                    labels4[6] = "B mean*                     ";
+                    states4[6] = false;
+                    labels4[7] = "B std deviation*            ";
+                    states4[7] = false;
+                    labels4[8] = "Square root of mean B*      ";
+                    states4[8] = false;
+                    labels4[9] = "Average RGB colors*         ";
+                    states4[9] = false;
                     gd.setInsets(0, 0, 0);
-                    gd.addCheckboxGroup(3, 3, labels4, states4);
+                    gd.addCheckboxGroup(4, 3, labels4, states4);
                 }
 
                 gd.showDialog(); //show
@@ -427,10 +436,14 @@ import java.util.Arrays;
 
                 doMeanRed = measureRGB[0];
                 doStdDeviationRed = measureRGB[1];
-                doMeanGreen = measureRGB[2];
-                doStdDeviationGreen = measureRGB[3];
-                doMeanBlue = measureRGB[4];
-                doStdDeviationBlue = measureRGB[5];
+                doSquareRootMeanR = measureRGB[2];
+                doMeanGreen = measureRGB[3];
+                doStdDeviationGreen = measureRGB[4];
+                doSquareRootMeanG = measureRGB[5];
+                doMeanBlue = measureRGB[6];
+                doStdDeviationBlue = measureRGB[7];
+                doSquareRootMeanB = measureRGB[8];
+                doAverageRGBcolors = measureRGB[9];
             }
 
             /*saveResults:
@@ -570,28 +583,44 @@ import java.util.Arrays;
                     ImageStatistics stats_b = impVector[2].getAllStatistics();
 
                     if(doMeanRed) {
-                        rt.addValue("Avarage red color, R mean*", stats_r.mean);
+                        rt.addValue("***Avarage red color, R mean", stats_r.mean);
                     }
 
                     if(doMeanGreen){
-                        rt.addValue("Avarage green color, G mean*", stats_g.mean);
+                        rt.addValue("***Avarage green color, G mean", stats_g.mean);
                     }
 
                     if(doMeanBlue){
-                        rt.addValue("Avarage blue color, B mean*", stats_b.mean);
+                        rt.addValue("***Avarage blue color, B mean", stats_b.mean);
                     }
 
                     if(doStdDeviationRed){
-                        rt.addValue("Red color std deviation, R std*", stats_r.stdDev);
+                        rt.addValue("***Red color std deviation, R std", stats_r.stdDev);
                     }
 
                     if(doStdDeviationGreen){
-                        rt.addValue("Green color std deviation, G std*", stats_g.stdDev);
+                        rt.addValue("***Green color std deviation, G std", stats_g.stdDev);
                     }
 
                     if(doStdDeviationBlue){
-                        rt.addValue("Blue color std deviation, B std*", stats_b.stdDev);
+                        rt.addValue("***Blue color std deviation, B std", stats_b.stdDev);
                     }
+
+                    if(doSquareRootMeanR){
+                        rt.addValue("***Square root of mean R", Math.sqrt(stats_r.mean));
+                    }
+                    if(doSquareRootMeanG){
+                        rt.addValue("***Square root of mean G", Math.sqrt(stats_g.mean));
+                    }
+                    if(doSquareRootMeanB){
+                        rt.addValue("***Square root of mean B", Math.sqrt(stats_b.mean));
+                    }
+
+                    if(doAverageRGBcolors){
+                        rt.addValue("***Average RGB colors", (stats_b.mean+stats_g.mean+stats_b.mean)/3);
+                    }
+
+
                 }
 
 
