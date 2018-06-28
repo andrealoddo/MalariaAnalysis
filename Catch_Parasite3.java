@@ -18,14 +18,15 @@ import java.awt.Polygon;
 import java.lang.Object;
 import java.util.Arrays;
 
-    /*Catch_Parasite by Tatalessap
+    /*Catch_Parasite3 by Tatalessap
      *
-     * Catch_Parasite è una classe volta alla misurazione di elementi all'interno di una immagine (binaria+grey).
+     * Catch_Parasite3 è una classe volta alla misurazione di elementi all'interno di una immagine (binaria+grey).
      * Si appoggia al Plugin "ThresholdAdjuster" per poter individuare le zone e gli oggetti da analizzare.
      * Implementa Plugin ma al suo interno vi è una classe Parasite che estende a sua volta il PluginFilter "ParticleAnalyzer"
      * aggiungendo misure non presenti in quest'ultimo.*/
     public class Catch_Parasite3 implements PlugIn {
         ImagePlus impVector [];
+        ImagePlus imp;
         boolean typeRGB;
 
         /*Metodo run necessaria per i PlugIn
@@ -33,13 +34,13 @@ import java.util.Arrays;
          * richiama il metodo catch_parasite_running dandogli in ingresso l'immagine*/
         public void run(String arg) {
             Parasite parasite = new Parasite();
-            ImagePlus imp = IJ.getImage();
+            imp = IJ.getImage();
             if (imp.getType() == ImagePlus.COLOR_RGB) typeRGB = true;
             if(typeRGB){
                 ChannelSplitter ch = new ChannelSplitter();
                 impVector = ch.split(imp);
             }
-            
+
             int flags = parasite.setup("", imp);
 
             /*Controllo*/
@@ -77,16 +78,14 @@ import java.util.Arrays;
                     doSquareIntensitySum, doUniformity, doVariance, doStandardDeviation,
                     doSmothness, doMinandMax;
 
-            private boolean[] measureRGB = new boolean[10];
+            private boolean[] measureRGB = new boolean[16];
             private boolean doMeanRed, doMeanGreen, doMeanBlue,
                             doStdDeviationRed, doStdDeviationGreen, doStdDeviationBlue,
-                            doSquareRootMeanR, doSquareRootMeanG, doSquareRootMeanB, doAverageRGBcolors;
+                            doSquareRootMeanR, doSquareRootMeanG, doSquareRootMeanB, doAverageRGBcolors,
+                            doMeanHue, doMeanSaturation, doMeanBrightness, doStdDeviationHue, doStdDeviationS,doStdDeviationBr;
 
             /*piGreco necessario per alcuni calcoli*/
             double pigreco = Math.PI;
-
-            //Salvataggio delle misure già settate in SetMeasurements
-            int old_measures = Analyzer.getMeasurements();
 
             boolean typeRGB = false;
 
@@ -97,7 +96,6 @@ import java.util.Arrays;
             @Override
             public boolean showDialog() {
                 //super.staticShowChoice = 1;
-
                 boolean flag = super.showDialog();
                 if (flag) {
                     if (imp.getType() == ImagePlus.COLOR_RGB) typeRGB = true;
@@ -199,7 +197,7 @@ import java.util.Arrays;
                 labels2[10] = "Bending Energy*        ";
                 states2[10] = false;
                 gd.setInsets(0, 0, 0);
-                gd.addCheckboxGroup(4, 4, labels2, states2);
+                gd.addCheckboxGroup(3, 4, labels2, states2);
 
                 gd.addMessage("Select the measures for Grey implemented", font, Color.GRAY);
 
@@ -232,7 +230,7 @@ import java.util.Arrays;
                     labels3[11] = "Smoothness R*            ";
                     states3[11] = false;
                     gd.setInsets(0, 0, 0);
-                    gd.addCheckboxGroup(4, 4, labels3, states3);
+                    gd.addCheckboxGroup(3, 4, labels3, states3);
                 }else
                 {
                     String[] labels3 = new String[13];
@@ -265,7 +263,7 @@ import java.util.Arrays;
                     labels3[12] = "Min and Max              ";
                     states3[12] = false;
                     gd.setInsets(0, 0, 0);
-                    gd.addCheckboxGroup(5, 4, labels3, states3);
+                    gd.addCheckboxGroup(3, 4, labels3, states3);
                 }
 
                 if(typeRGB){
@@ -274,31 +272,44 @@ import java.util.Arrays;
 
                    // gd.addMessage("Select the measures", font, colors[0]+ "for RGB implemented", font, colors[1]);
                     gd.addCheckbox("Select All", true);
-                    String[] labels4 = new String[10];
-                    boolean[] states4 = new boolean[10];
+                    String[] labels4 = new String[16];
+                    boolean[] states4 = new boolean[16];
 
                     labels4[0] = "R mean*                      ";
                     states4[0] = false;
                     labels4[1] = "R std deviation*             ";
                     states4[1] = false;
-                    labels4[2] = "Square root of mean R*      ";
+                    labels4[2] = "Square root of mean R*       ";
                     states4[2] = false;
                     labels4[3] = "G mean*                      ";
                     states4[3] = false;
                     labels4[4] = "G std deviation*             ";
                     states4[4] = false;
-                    labels4[5] = "Square root of mean G*      ";
+                    labels4[5] = "Square root of mean G*       ";
                     states4[5] = false;
-                    labels4[6] = "B mean*                     ";
+                    labels4[6] = "B mean*                      ";
                     states4[6] = false;
-                    labels4[7] = "B std deviation*            ";
+                    labels4[7] = "B std deviation*             ";
                     states4[7] = false;
-                    labels4[8] = "Square root of mean B*      ";
+                    labels4[8] = "Square root of mean B*       ";
                     states4[8] = false;
-                    labels4[9] = "Average RGB colors*         ";
+                    labels4[9] = "Average RGB colors*          ";
                     states4[9] = false;
+                    labels4[10] = "H mean*                     ";
+                    states4[10] = false;
+                    labels4[11] = "H std deviation*            ";
+                    states4[11] = false;
+                    labels4[12] = "S mean*                     ";
+                    states4[12] = false;
+                    labels4[13] = "S std deviation*            ";
+                    states4[13] = false;
+                    labels4[14] = "Br mean*                    ";
+                    states4[14] = false;
+                    labels4[15] = "Br std deviation*           ";
+                    states4[15] = false;
+
                     gd.setInsets(0, 0, 0);
-                    gd.addCheckboxGroup(4, 3, labels4, states4);
+                    gd.addCheckboxGroup(6, 3, labels4, states4);
                 }
 
                 gd.showDialog(); //show
@@ -452,6 +463,12 @@ import java.util.Arrays;
                 doStdDeviationBlue = measureRGB[7];
                 doSquareRootMeanB = measureRGB[8];
                 doAverageRGBcolors = measureRGB[9];
+                doMeanHue= measureRGB[10];
+                doStdDeviationHue= measureRGB[11];
+                doMeanSaturation= measureRGB[12];
+                doStdDeviationS= measureRGB[13];
+                doMeanBrightness= measureRGB[14];
+                doStdDeviationBr= measureRGB[15];
             }
 
             /*saveResults:
@@ -591,15 +608,15 @@ import java.util.Arrays;
                     ImageStatistics stats_b = impVector[2].getAllStatistics();
 
                     if(doMeanRed) {
-                        rt.addValue("***Avarage red color, R mean", stats_r.mean);
+                        rt.addValue("***Average red color, R mean", stats_r.mean);
                     }
 
                     if(doMeanGreen){
-                        rt.addValue("***Avarage green color, G mean", stats_g.mean);
+                        rt.addValue("***Average green color, G mean", stats_g.mean);
                     }
 
                     if(doMeanBlue){
-                        rt.addValue("***Avarage blue color, B mean", stats_b.mean);
+                        rt.addValue("***Average blue color, B mean", stats_b.mean);
                     }
 
                     if(doStdDeviationRed){
@@ -628,12 +645,29 @@ import java.util.Arrays;
                         rt.addValue("***Average RGB colors", (stats_b.mean+stats_g.mean+stats_b.mean)/3);
                     }
 
+                    ImagePlus [] imagePluses = getImageStackHSB(imp);
+
+                    imagePluses[0].setRoi(roi); //hue
+                    imagePluses[1].setRoi(roi); //saturation
+                    imagePluses[2].setRoi(roi); //brightness
+
+                    ImageStatistics stats_hu = imagePluses[0].getAllStatistics();
+                    ImageStatistics stats_sa = imagePluses[1].getAllStatistics();
+                    ImageStatistics stats_br = imagePluses[2].getAllStatistics();
+
+                    if(doMeanHue)rt.addValue("***Average Hue color, H mean", stats_hu.mean);
+                    if(doMeanSaturation)rt.addValue("***Average Saturation color, S mean", stats_sa.mean);
+                    if(doMeanBrightness)rt.addValue("***Average Brightness color, B mean", stats_br.mean);
+
+                    if(doStdDeviationHue)rt.addValue("***Hue color std deviation", stats_hu.stdDev);
+                    if(doStdDeviationS)rt.addValue("***Saturation color std deviation", stats_sa.stdDev);
+                    if(doStdDeviationBr)rt.addValue("***Brightness color std deviation", stats_br.stdDev);
+
 
                 }
 
 
             }
-
 
             /*Riguardante ConvexHull-
              * Rivisitazione del metodo getArea da Analyzer(super-super classe) per cui dati i punti del poligono calcola l'area
@@ -649,18 +683,6 @@ import java.util.Arrays;
                     carea += (p.xpoints[i] + p.xpoints[iminus1]) * (p.ypoints[i] - p.ypoints[iminus1]);
                 }
                 return (Math.abs(carea / 2.0));
-            }
-
-            private double getSmoothness(double variance) {
-                //the variance in this measure is normalized to the rage [0, 1] by dividing it by (L-1)^2
-                //L --> grey level
-
-                //only grey level in the object or in the histagram?
-                int greyLevel = 256;
-
-                double varianceNormalized = variance / Math.pow(greyLevel - 1, 2);
-
-                return 1 - (1 / (1 + varianceNormalized));
             }
 
             /*Riguardante ConvexHull-
@@ -783,6 +805,52 @@ import java.util.Arrays;
 
                 return uniformity;
             }
+
+            private double getSmoothness(double variance) {
+                //the variance in this measure is normalized to the rage [0, 1] by dividing it by (L-1)^2
+                //L --> grey level
+
+                //only grey level in the object or in the histagram?
+                int greyLevel = 256;
+
+                double varianceNormalized = variance / Math.pow(greyLevel - 1, 2);
+
+                return 1 - (1 / (1 + varianceNormalized));
+            }
+
+            private ImagePlus [] getImageStackHSB(ImagePlus imagePlus){
+                ImagePlus [] imagePluses = new ImagePlus[3];
+                int w = imagePlus.getWidth();
+                int h = imagePlus.getHeight();
+
+                ImageStack hsbStack = imagePlus.getStack();
+                ImageStack hueStack = new ImageStack(w,h);
+                ImageStack satStack = new ImageStack(w,h);
+                ImageStack brightStack = new ImageStack(w,h);
+
+                byte[] hue,s,b;
+
+                ColorProcessor cp;
+                int n = hsbStack.getSize();
+
+                for (int i=1; i<=n; i++) {
+                    hue = new byte[w*h];
+                    s = new byte[w*h];
+                    b = new byte[w*h];
+                    cp = (ColorProcessor)hsbStack.getProcessor(1);
+                    cp.getHSB(hue,s,b);
+                    hueStack.addSlice(null,hue);
+                    satStack.addSlice(null,s);
+                    brightStack.addSlice(null,b);
+                }
+
+                imagePluses[0] = new ImagePlus("hue", hueStack);
+                imagePluses[1] = new ImagePlus("sat", satStack);
+                imagePluses[2] = new ImagePlus("bright", brightStack);
+
+                return imagePluses;
+            }
+
 
             /*Funzione di appoggio per il caolcolo della distanza*/
             public double distance(int argx1, int argy1, int argx2, int argy2) {
